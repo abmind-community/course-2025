@@ -5,10 +5,12 @@ description = "Add your description here"
 readme = "README.md"
 requires-python = ">=3.13"
 dependencies = [
+    "altair>=6.0.0",
     "matplotlib>=3.10.7",
     "mesa>=3.3.1",
     "networkx>=3.5",
     "numpy>=2.2.2",
     "pandas>=2.3.3",
     "pre-commit>=4.3.0",
+    "solara>=1.54.0",
 ]
