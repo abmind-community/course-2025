@@ -77,3 +77,62 @@
 
 # 如何提交？
 
+请你修改对应的 python 代码，并撰写一个说明作业完成细节的文档（简要说明你如何设计、修改了哪些部分，有什么发现），最后打包压缩发送至邮箱（bwang44@buffalo.edu 和 peter.org3s@gmail.com）。
+
+最后你提交的文件应该只包含：
+
+- agents.py
+- app.py
+- model.py
+- 作业说明（md/pdf/word 格式均可）
+
+举个例子：
+----
+Q1. Agent 属性拓展
+* **要求：** 
+	* 将现有的单一属性 Agent 拓展为一个持有**两种颜色属性**的 Agent。
+    * Agent 必须新增一个或多个属性来记录其**颜色阵营**（例如，'Red' / 'Blue'）
+    * 设置一个系数控制初始颜色的比例，默认红色 agent 占比为 30%
+
+- agent.py
+
+首先考虑在 agent 中进行基本属性拓展，属性里面添加 color ，同时在 `__init__` 里面也添加相关的输入
+
+
+```python
+def __init__(self, model, cell, color=None):
+        """初始化代理。
+```
+对 agent 属性拓展 color ：
+```python
+
+# 设置 agent 的颜色属性
+# 如果提供了color参数，使用它；否则随机选择
+self.color = color if color is not None else self.random.choice(["red", "blue"]) # 这个是没有附加颜色出现问题的
+
+```
+- model.py
+
+model 模块涉及创建 agent 的步骤，这里需要如何设置不同颜色类型agent的数量，批量使用 create_agents 函数之后就需要传入对应颜色，如下：
+
+```python
+# 创建颜色列表：根据red_ratio设置颜色分布
+num_red = int(self.num_agents * red_ratio)
+num_blue = self.num_agents - num_red
+colors = ["red"] * num_red + ["blue"] * num_blue # 返回一个list，里面包含的是红色和蓝色的智能体
+
+# 打乱颜色顺序，使分布更随机
+self.random.shuffle(colors)
+
+# Create agents，传入颜色列表
+MoneyAgent.create_agents(
+	self,
+	self.num_agents,
+	self.random.choices(self.grid.all_cells.cells, k=self.num_agents),
+	color=colors,  # 传入颜色列表
+)
+```
+
+Q2：...
+
+----
