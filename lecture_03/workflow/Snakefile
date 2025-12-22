@@ -1,0 +1,88 @@
+# 定义邻域大小列表，用于敏感性分析
+# LS_NEIGHBORHOOD = ["4", "8", "12", "24", "48", "80"]
+LS_NEIGHBORHOOD = [ "12"]
+# 定义随机种子列表，用于多次重复运行以取平均
+LS_SEEDS = [1]
+# 定义 Always Happy 比例列表，用于敏感性分析
+LS_ALWAYS_HAPPY = [0.0, 0.1, 0.2, 0.3, 0.4, 0.5]
+# 固定网格大小
+FIXED_GRID_SIZE = 50
+
+def get_thresholds(n):
+    """
+    根据邻域大小 n 生成阈值列表。
+    阈值范围从 1/n 到 0.5（即 n/2 / n）。
+    """
+    n = int(n)
+    return [round(i/n, 4) for i in range(1, int(n/2) + 1)]
+
+rule all:
+    # 最终目标：生成所有邻域和 Always Happy 比例的敏感性分析图和合并图
+    input:
+        expand("results/h_{h}/n_{n}/sensitivity_plot.png", h=LS_ALWAYS_HAPPY, n=LS_NEIGHBORHOOD),
+        expand("results/h_{h}/combined_sensitivity_plot.png", h=LS_ALWAYS_HAPPY)
+
+rule run_simulation:
+    # 运行 Schelling 仿真模型
+    # 每个参数组合（Always Happy、邻域、阈值、种子）对应一个仿真运行
+    # 现在直接输出 moran.csv，省去了单独的计算步骤
+    output:
+        agent_log="results/h_{always_happy}/n_{neighborhood}/t_{threshold}/s_{seed}/agent_log.csv",
+        moran_csv="results/h_{always_happy}/n_{neighborhood}/t_{threshold}/s_{seed}/moran.csv"
+    params:
+        always_happy = "{always_happy}",
+        threshold = "{threshold}",
+        neighborhood = "{neighborhood}",
+        seed = "{seed}",
+        grid_size = FIXED_GRID_SIZE,
+        out_dir = "results/h_{always_happy}/n_{neighborhood}/t_{threshold}/s_{seed}"
+    shell:
+        """
+        mkdir -p {params.out_dir}
+        uv run mpirun -n 1 python schelling.py params.yaml '{{
+            "world.width": {params.grid_size},
+            "world.height": {params.grid_size},
+            "threshold": {params.threshold},
+            "neighborhood": "{params.neighborhood}",
+            "random.seed": {params.seed},
+            "always_happy_ratio": {params.always_happy},
+            "agent_log_file": "{output.agent_log}",
+            "moran_file": "{output.moran_csv}",
+            "summary_log_file": "{params.out_dir}/summary_log.csv"
+        }}'
+        """
+
+rule aggregate_moran:
+    # 聚合每个参数组合（Always Happy x 邻域 x 阈值）下不同随机种子运行的结果
+    # 输入现在直接来自 run_simulation 的 output.moran_csv
+    input:
+        lambda wildcards: expand("results/h_{h}/n_{n}/t_{t}/s_{s}/moran.csv",
+                                 h=wildcards.always_happy,
+                                 n=wildcards.neighborhood,
+                                 t=wildcards.threshold,
+                                 s=LS_SEEDS)
+    output:
+        "results/h_{always_happy}/n_{neighborhood}/t_{threshold}/moran_avg.csv"
+    shell:
+        "uv run python scripts/final_stats.py aggregate {output} {input}"
+
+rule plot:
+    # 绘制单个邻域大小的敏感性分析图
+    input:
+        lambda wildcards: expand("results/h_{h}/n_{n}/t_{t}/moran_avg.csv",
+                                 h=wildcards.h,
+                                 n=wildcards.n,
+                                 t=get_thresholds(wildcards.n))
+    output:
+        "results/h_{h}/n_{n}/sensitivity_plot.png"
+    shell:
+        "uv run python scripts/plot_sensitivity.py single {output} {input}"
+
+rule plot_combined:
+    # 绘制指定 Always Happy 比例下所有邻域大小的合并敏感性分析图
+    input:
+        lambda wildcards: [f"results/h_{wildcards.h}/n_{n}/t_{t}/moran_avg.csv" for n in LS_NEIGHBORHOOD for t in get_thresholds(n)]
+    output:
+        "results/h_{h}/combined_sensitivity_plot.png"
+    shell:
+        "uv run python scripts/plot_sensitivity.py combined {output} {input}"

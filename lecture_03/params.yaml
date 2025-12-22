@@ -1,0 +1,10 @@
+world.width: 50
+world.height: 50
+stop.at: 100
+neighborhood: "4"
+threshold: 0.75
+empty_ratio: 0.1
+random.seed: 123
+agent_log_file: output/agent_log.csv
+summary_log_file: output/summary_log.csv
+always_happy_ratio: 0.1

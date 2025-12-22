@@ -1,0 +1,368 @@
+---
+title: |
+  From Ising Model to Schelling Model<br>
+  <span style="font-size: 0.6em; font-weight: 300;">Why We Need ABM?</span>
+author: "Zhengzi Zhou"
+institute: |
+   **[CASA UCL](https://www.ucl.ac.uk/casa/)**
+footer: |
+   Zhengzi Zhou - CASA UCL - 2025
+date: today
+lang: en
+format:
+   revealjs:
+      background-transition: none
+      pdf-separate-fragments: false
+      auto-stretch: true
+      number-sections: false
+      scrollable: true
+      slide-number: c/t
+      chalkboard: true
+      logo: ./img/logo.png
+      theme: [serif, ./style.scss] # serif | darcula | simple | solarized | sky
+      output-file: slide.html
+---
+
+# Why we need ABM?
+
+<!-- page 1 -->
+## Ising model: Background
+### Curie Point Heat Engine
+
+:::: {.columns}
+
+::: {.column width="50%" .incremental}
+- 宏观
+   - 铁磁体加热到居里温度会失去磁性。
+   - **相变 (Phase Transition)**: 有磁性 $\to$ 无磁性。
+- 微观
+   - 金属粒子在晶格上排列 (Crystal Lattice)。
+   - 只有粒子自旋方向会改变。
+   - 只与相邻粒子相互作用。
+:::
+
+::: {.column width="50%"}
+{{< video https://www.youtube.com/shorts/u_8OvRQ-EDc width="400" height="500"  >}}
+:::
+::::
+
+<!-- page 2 -->
+## Ising Model {.smaller}
+
+::: {.incremental}
+- Wilhelm Lenz (1920) 和 Ernst Ising (1925)
+   - ![](./img/2D_ising_model_on_lattice.svg){width=70% fig-align="center"}
+- 状态： 每个格子上的原子有两个自旋状态：$+1$（向上）或 $-1$（向下）。
+   - 当所有原子自旋一致时，系统表现出宏观磁性。（有序状态）
+   - 当自旋随机分布时，宏观系统无磁性。（无序状态）
+- 交互： 相邻原子倾向于**自旋一致**以降低系统能量。 $E =  \sum s_i s_j$
+- 动作： metropolis algorithm
+   - 如果 $\Delta E <  0$，翻转
+   - 如果 $\Delta E \geq 0$，以概率 $e^{-\Delta E / kT}$ 翻转。
+- 随着温度 $T$ 升高，热扰动增加。**这个模型能够模拟相变吗？相变点在哪？**
+- Netlogo 实现: [Ising Model]()
+:::
+
+
+<!-- page 3 -->
+## The Struggle for Exact Solutions {.smaller}
+
+::::  {.columns}
+::: {.column width="60%" .incremental}
+- **The 1D Disappointment**
+   - 由 Wilhelm Lenz (1920) 和 Ernst Ising (1925) 提出。
+   - Ising (1925) 证明：一维情况下没有相变。如果 $T>0$，系统总是无序的。
+   - Ising 误以为二维和三维情况也一样没有相变。
+- 平均场理论 (Mean-Field Theory) Pierre Curie
+   - 近似方法，忽略空间关联。预测了临界温度，但不精确。
+- **The 2D Breakthrough**
+   - **Lars Onsager (1944)**: 推导出了二维ising的精确解，预测了自发磁化的系数。 1968年诺贝尔奖。 $\frac{2}{\ln (1+\sqrt{2})} \approx 2.269$
+   - **C.N. Yang, (1952)**: 计算出了精确的自发磁化强度 ($M$)。
+- **The 3D Challenge**
+   - 至今没有找到解析解 。
+   - **Hugo Duminil-Copin (2022 fields prize )**:
+      - 证明了三维相变的连续性和清晰度。
+      - 但仍然没有2D ising的封闭公式。
+
+   > The most striking results of Duminil-Copin are for **Ising-type models in dimensions three and four**. He has established the continuity and sharpness of the phase transition in dimension three.
+   > — [The Fields Medal 2022 Citation](https://www.mathunion.org/imu-awards/fields-medal/fields-medal-2022-citation)
+:::
+
+::: {.column width="40%" .incremental}
+- ![](./img/cny.png){width=100% fig-align="center"}
+
+-   > "就这样，我开始了漫长的计算，这是我职业生涯中**最长的一次计算**... 最后，**经过大约六个月断断续续的工作**，所有的碎片突然拼凑在了一起... 我看到了令人惊讶的简单的最终结果。"
+   >
+   > — Selected Papers, 1945-1980, by C.N.Yang, 1982.
+:::
+::::
+
+<!-- page 4 -->
+## Why we need ABM? {.smaller}
+
+:::: {.columns }
+::: {.incremental}
+- 解析方法的困境
+   - 回顾 Ising: <span style="font-size: 1.2em; color: red;">最简单的状态，最简单的交互，最简单的规则，求解如此困难！</span>
+   - 当系统包含异质性个体（Heterogeneity）和复杂交互时，解析解通常不存在（Intractable）。
+   - 社会系统比 Ising 模型更复杂，无法用 Equation based modelling (EBM) 还原。
+:::
+::: {.column width="50%" .incremental}
+- Jim Gray, 2007
+   - ![](./img/500px-JimGray4thParadigm.png){width=80%}
+:::
+::: {.column width="50%" .incremental}
+- 科学研究的四种范式 (Four Paradigms of Scientific Research)
+   - 实验方法 (Experimental Methods) ： 经验主义。
+   - 解析方法 (Theoretical Methods) ：解析推导, 如麦克斯韦方程组, 杨振宁的解
+   - 计算模拟方法 (Computational Methods) : 计算, 如 **ABM**, 蒙特卡洛
+   - 数据驱动方法 (Data-Driven Methods) : 大数据, 机器学习
+
+:::
+::: {.incremental}
+- **范式转移 (The Paradigm Shift)**
+   1. 实验范式的困境
+      - 社会科学难以进行大规模受控实验。
+      - 伦理限制：不能随意操纵人类社会。历史不可重复：社会现象具有独特性和时效性。
+   2. 数据范式的局限
+      - 相关性不等于因果性：大数据只能揭示模式，无法解释机制。
+      - 预测 vs 解释：数据驱动方法擅长预测结果，但难以解释过程。
+   3. 计算模拟的独特性
+      - 处理异质性：每个个体可以有不同属性和行为。
+      - 捕捉非线性：复杂交互和反馈机制。
+      - 揭示涌现：宏观模式如何从微观规则中产生。
+:::
+
+::::
+
+<!-- page 5 -->
+
+## Critical Phenomena {.smaller .incremental}
+### Scale-free properties
+- 在临界点附近，系统表现出无特征尺度 (Scale-free)。
+{{< video https://www.youtube.com/watch?v=MxRddFrEnPc start=10 width="1000" height="600"  >}}
+
+::: {.notes}
+既然讲到了ising model，我们就顺便介绍一下它的一个重要现象——临界现象 (Critical Phenomena)。
+大家先来看这个视频。这是伊辛模型在临界点（Critical Point），也就是系统即将发生相变时的状态。 你们会发现一个非常有意思的现象：Scale-free（无标度性/无特征尺度）。 什么意思呢？无论镜头怎么拉近（Zoom in）还是拉远（Zoom out），你看到的黑白斑块的结构看起来都是一样的。
+
+
+【第一部分：无标度性 (Scale-free)】
+大家先来看这个视频。这是伊辛模型在临界点（Critical Point），也就是系统即将发生相变时的状态。 你们会发现一个非常有意思的现象：Scale-free（无标度性/无特征尺度）。 什么意思呢？无论镜头怎么拉近（Zoom in）还是拉远（Zoom out），你看到的黑白斑块的结构看起来都是一样的。 这就好比在社会网络里，你在小圈子里看到的结构，放大了看整个国家的结构，竟然是相似的。这种**自相似性（Self-similarity）**是复杂系统临界状态的一个典型特征。
+
+
+:::
+
+## Critical Phenomena {.smaller .incremental}
+### Correlation length
+- 系统中两个点之间的关联强度。
+
+::::  {.columns}
+::: {.column width="50%" .incremental}
+- ![](./img/corr_length.png){width=50% fig-align="center"}
+:::
+
+<!-- ::: {.column width="70%" .incremental}
+- ![](./img/cl-2.png){width=100% fig-align="center"}
+::: -->
+
+:::{.column width="50%" .incremental}
+- ![](./img/CL.png){width=70% fig-align="center"}
+:::
+
+
+:::{.incremental}
+- Critical Phenomena - 共形不变性
+   - 在临界点附近，系统表现出**共形不变性 (Conformal Invariance)**。
+   - Smirnov (2010 fields prize)
+
+      > For his work on the mathematical foundations of statistical physics, proving the **conformal invariance of the Ising model**.
+      >
+      > — [The Fields Medal 2010 Citation](https://www.mathunion.org/imu-awards/fields-medal/fields-medal-2010-citation)
+:::
+::::
+
+
+<!-- page 6 -->
+## Extensions {.smaller .incremental}
+- **Ising Model $\rightarrow$ Hopfield network (1982)**
+   - John Hopfield 将 Ising model 用于理解记忆，创建了第一个神经网络。
+   - 损失函数 $E =  \sum w_{ij} s_i s_j$
+      - 连接权重 $w_{ij}$ 对应于 Ising 模型中的相互作用强度。
+      - 存储记忆模式作为能量最小化的稳定态。
+- 重整化, 重整化群, 重整化流 (Renormalization, Renormalization Group, Renormalization Flow)
+   - Kenneth G. Wilson
+- Spin glass model - Giorgio Parisi
+- Junyi Gao, Joerg Heintz, Christina Mack, Lucas Glass, Adam Cross, Jimeng Sun (2023). Evidence-driven spatiotemporal COVID-19 hospitalization prediction with **Ising dynamics**. *Nature Communications*.
+
+<!-- # ----------------------------------- Schelling Model ----------------------------------- -->
+
+# Schelling Model
+
+<!-- page 1 -->
+## Background {.smaller}
+::::{.columns}
+::: {.column width="50%"}
+![](./img/seg_chicago.jpg){ width="90%"}
+:::
+::: {.column width="50%" .incremental}
+- Observation
+   - 极度隔离：白人(粉)、黑人(蓝)、拉美裔(橙) 界限分明。
+   - 尖锐边界：几乎没有“混合区”，宛如一道无形的墙。
+- 隔离的代价 (Consequences)
+   - 资源不平等：美国学区房制度 $\rightarrow$ 教育隔离。
+   - 贫困代际传递：医疗、治安、就业机会的空间剥夺。
+- 传统社会学的解释 (Structural Explanations)
+   - 宏观政策：吉姆·克劳法 (Jim Crow Laws), 红线政策 (Redlining)。
+   - 核心假设：极端的宏观结果 = 极端的宏观政策 + 极端的种族歧视。
+- The Puzzle
+   - 法律隔离已废除 (Civil Rights Act 1964)，为何事实上的隔离依然顽固？
+   - 关键问题：宏观隔离是否由微观动机产生？
+:::
+::::
+
+
+<!-- page 2 -->
+## Schelling Model {.smaller}
+
+:::: {.columns}
+::: {.column width="45%"}
+1. Historical Context
+   - James Sakoda (1949)
+      - Dissertation: "Minidoka: An Analysis of Changing Patterns of Social Interaction".
+      - 早期的棋盘模型 (Checkerboard Model)，虽早于 Schelling 20 年，但长期被忽视。
+   - Thomas Schelling (1971)
+      - Dynamic Models of Segregation, Journal of Mathematical Sociology.
+      - Micromotives and Macrobehavior (1978).
+   - 第一个真正意义上大规模、多变量、完全基于计算机的社会科学 ABM
+      - Growing Artificial Societies: Social Science from the Bottom Up (1996) - Epstein & Axtell
+      - Sugarscape 模型
+:::
+::: {.column width="55%"}
+2. Formal Definition
+- Environment (环境):
+   - $N \times N$ 网格 (Grid)，通常为环面 (Torus)。
+- Agents (智能体):
+   - 两类群体：$S \in \{ \color{red}{Red}, \color{blue}{Blue} \}$。
+   - 网格中包含一定比例的空地 (Empty/Void)。
+- 交互:
+   - Moore Neighborhood: 周围 8 个格子（上下左右+对角）。
+   - Rule: Utility Function (效用规则):
+      - 设定阈值 (Threshold) $T$
+      - 计算同类比例 $f = \frac{\text{Same Color Neighbors}}{\text{Total Neighbors}}$.
+   - 状态判定:
+      - IF $f \ge T \rightarrow$ Happy (Satisfied).
+      - IF $f < T \rightarrow$ Unhappy (Dissatisfied).
+- 动作:
+   - 每个 Time Step，随机选取 Unhappy Agent。
+   - Move: 移动到网格中随机的一个空地 (通常要求该空地能使其 Happy)。
+- Netlogo 实现: [Schelling Model]()
+:::
+::::
+
+<!-- page 3 -->
+<!-- ## 实现 {.smaller}
+- 核心算法 (Core Algorithm)
+   - 网格初始化 (Grid Initialization)
+      - 创建一个 N x M 的网格，随机分配红色和蓝色智能体，以及空位。
+   - 快乐评估 (Happiness Evaluation)
+      - 对每个智能体，计算其邻居中同类的比例。
+      - 如果比例 $\geq t$，则智能体感到快乐；否则不快乐。
+   - 搬家机制 (Relocation Mechanism)
+      - 对每个不快乐的智能体，寻找一个空位进行搬迁。
+      - 搬迁可以是随机选择空位，或选择能使其快乐的空位。
+   - 迭代过程 (Iterative Process)
+      - 重复快乐评估和搬家机制，直到所有智能体都感到
+   - 量化宏观隔离 (Quantifying Segregation)
+      - Moran's I 等指标衡量隔离程度。 -->
+
+
+## Process Visualization {.smaller}
+::::{.columns }
+::: {.column width="60%" .incremental}
+- ![](./img/w100_e0.05_n24_fpairwise_tau0.29_grids.png){.r-stretch width=100% fig-align="left"}
+:::
+::: {.column width="40%" .incremental}
+- ![](./img/w100_e0.05_n24_fpairwise_tau0.29_process.png){.r-stretch width=100% fig-align="center"}
+:::
+
+::: {.column width="60%" .incremental}
+- ![](./img/w100_e0.05_n24_fpairwise_tau0.38_grids.png){.r-stretch width=100% fig-align="left"}
+:::
+::: {.column width="40%" .incremental}
+- ![](./img/w100_e0.05_n24_fpairwise_tau0.38_process.png){.r-stretch width=100% fig-align="center"}
+:::
+::::
+
+<!-- page 4 -->
+## Sensitivity Analysis {.smaller}
+
+:::{.r-stack}
+::: {.fragment .fade-out}
+- ![](./img/single_run.png){width=100% fig-align="center"}
+:::
+::: {.fragment .fade-in}
+- ![](./img/sensitivity.png){width=100% fig-align="center"}
+:::
+:::
+
+## Sensitivity Analysis {.smaller}
+
+- 参数：
+   - 宏观：网格大小 (Grid Size)； 人口密度 (Population Density)
+   - 微观: **偏好阈值 (Preference Threshold, $t$)**, **邻域定义 (Neighborhood Definition)** , 移动规则 (Movement Rule)
+
+::: {.incremental}
+- 偏好阈值 ($t$)：智能体对邻居构成比例的接受度。
+
+:::: {.columns}
+::: {.column width="30%" .incremental}
+- ![](./img/utility.png){width=60% fig-align="center"}
+:::
+::: {.column width="70%" .incremental}
+- ![](./img/utility_func.png){width=60% fig-align="center"}
+:::
+::::
+
+- Neigbhorhood Definition:
+   - ![](./img/neighbor.png){width=80% fig-align="center"}
+:::
+
+
+## The Dynamics of Segregation {.smaller}
+::::{.columns}
+::: {.column width="70%"}
+![](./img/combined_sensitivity_plot_g-50.png){width=100% fig-align="center"}
+:::
+::: {.column width="30%" .incremental}
+- Key insights:
+   - **涌现 (Emergence)**: 微观的偏好导致宏观的隔离。
+   - 反直觉的 **临界点 (Tipping Point)**：非常温和的偏好 ( $t=33\%$)，就会导致高度隔离。
+- Ising Model vs Schelling Model
+   - Lattice (物理) $\leftrightarrow$ Grid/City (社会)
+   - Spin (自旋) $\leftrightarrow$ Race/Class (种族/阶层)
+   - Energy Minimization (能量极小) $\leftrightarrow$ Happiness Maximization (满意度极大)
+   - Temperature (温度/噪音) $\leftrightarrow$ Tolerance/Random Move (随机搬家/容忍度)
+:::
+::::
+
+## Extensions and Modifications {.smaller}
+- Thomas C. Schelling (1971). Dynamic models of segregation. The Journal of Mathematical Sociology.
+- Vinković, D., Kirman, A., 2006. A physical analogue of the Schelling model. Proceedings of the National Academy of Sciences 103, 19261–19265. https://doi.org/10.1073/pnas.0609371103
+- May Lim, Richard Metzler, Yaneer Bar-Yam (2007). Global Pattern Formation and Ethnic/Cultural Violence. Science.
+- Benenson, I., Hatna, E., 2011. Minority–Majority Relations in the Schelling Model of Residential Dynamics. Geographical Analysis 43, 287–305. https://doi.org/10.1111/j.1538-4632.2011.00820.x
+- Durrett, R., Zhang, Y., 2014. Exact solution for a metapopulation version of Schelling’s model. Proceedings of the National Academy of Sciences 111, 14036–14041. https://doi.org/10.1073/pnas.1414915111
+- Kim, I.-H., Tsou, M.-H., Feng, C.-C., 2015. Design and implementation strategy of a parallel agent-based Schelling model. Computers, Environment and Urban Systems 49, 30–41. https://doi.org/10.1016/j.compenvurbsys.2014.09.004
+- Urselmans, L., Phelps, S., 2018. A Schelling model with adaptive tolerance. PLOS ONE 13, e0193950. https://doi.org/10.1371/journal.pone.0193950
+- Daniel S. Seara, Jonathan Colen, Michel Fruchart, Yael Avni, David Martin, Vincenzo Vitelli (2025). Sociohydrodynamics: data-driven modelling of social behavior. Proceedings of the National Academy of Sciences.
+- Stefan Thurner, Markus Hofer, Jan Korbel (2025). Why more social interactions lead to more polarization in societies. Proceedings of the National Academy of Sciences.
+
+# Thanks.
+
+
+## TODOs {.smaller}
+- Level 1:
+   - 对格网大小和人口密度进行敏感性分析 (Sensitivity Analysis)。
+   - 比较在不同邻域定义下，格网大小和人口密度对隔离程度的影响。
+- Level 2:
+   - 给mesa github 提交pull request，添加schelling model中对tolerance threshold的敏感性分析。

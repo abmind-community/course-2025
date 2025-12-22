@@ -1,0 +1,195 @@
+/*-- scss:defaults --*/
+
+// Variables -----------------------------------
+$themeColor: #1f38c5; // Your primary blue
+$accentColor: #f0f0f0;
+$textColor: #222;
+$backgroundColor: #fff;
+
+// Overwrite theme settings --------------------
+// Colors
+$mainColor: $textColor;
+$headingColor: $themeColor; // Headings use theme color
+$linkColor: $themeColor;
+$linkColorHover: lighten($themeColor, 15%);
+$selectionBackgroundColor: lighten($themeColor, 30%);
+
+// Backgrounds
+$backgroundColor: #fff;
+$overlayElementBgColor: 0, 0, 0;
+$overlayElementFgColor: 240, 240, 240;
+
+// Fonts
+$mainFontSize: 24px;
+// Optimized font stack: Noto Sans SC for Chinese, Source Sans Pro for English
+$mainFont: 'Source Sans Pro', Helvetica, "Noto Sans SC", "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", "WenQuanYi Micro Hei", sans-serif;
+$headingFont: 'Source Sans Pro', Helvetica, "Noto Sans SC", "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", "WenQuanYi Micro Hei", sans-serif;
+$codeFont: 'Consolas', 'Monaco', 'Andale Mono', 'Ubuntu Mono', monospace;
+
+// Heading Settings
+$headingTextShadow: none;
+$headingLetterSpacing: normal;
+$headingTextTransform: uppercase; // Standard case is usually more readable than capitalize/uppercase
+$headingFontWeight: 600;
+$heading1Size: 2.0em; // Slightly larger
+$heading2Size: 1.5em;
+$heading3Size: 1.2em;
+$heading4Size: 1.0em;
+
+/*-- scss:rules --*/
+
+// Import Noto Sans SC
+@import url('https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@100..900&display=swap');
+
+// Mixins
+@include dark-bg-text-color(#fff);
+
+
+/* =============================================
+   Global Layout & Typography
+   ============================================= */
+
+.reveal .slides {
+    text-align: left; // Default alignment
+}
+
+// Better readability
+.reveal p,
+.reveal li {
+    line-height: 1.6;
+}
+
+// Spacing between list items
+.reveal ul li,
+.reveal ol li {
+    margin-bottom: 0.5em;
+    margin-top: 0; // Reset top margin
+}
+
+.reveal ul,
+.reveal ol {
+    display: block; // Fix inline-block issue
+    margin-left: 1.5em;
+}
+
+
+/* =============================================
+   Components
+   ============================================= */
+
+// --- Title Slide ---
+// Targeting the title content specifically
+#title-slide {
+    text-align: center; // Ensure everything centers
+
+    .title {
+        // The blue box effect - reduced size
+        background-color: $themeColor;
+        color: white;
+        padding: 0.2em 0.4em; // Further reduced padding
+        border-radius: 6px;
+        box-shadow: 0 5px 15px rgba(0,0,0,0.15);
+        display: inline-block; // Allow box to fit content
+        margin-bottom: 1em; // Reduced margin
+
+        h1 {
+            color: white;
+            margin: 0;
+            font-size: 1.2em; // Reduced font size
+            background: none; // Remove default h1 background
+            padding: 0;
+            text-align: center;
+        }
+    }
+
+    .subtitle {
+        margin-top: 0.5em;
+        font-size: 1.5em;
+        color: lighten($textColor, 20%);
+        font-weight: 300;
+    }
+
+    .quarto-title-authors {
+        display: flex;
+        justify-content: center;
+        margin-top: 1em;
+    }
+
+    .quarto-title-author-name,
+    .quarto-title-affiliation,
+    .date {
+        margin-top: 0.5em;
+        font-size: 1em;
+        color: $textColor; // Ensure visibility
+    }
+}
+
+
+// --- Headings (Standard Slides) ---
+// Style for h1 on normal slides (Beamer-like strip)
+.reveal .slide:not(#title-slide) h1 {
+    background-color: $themeColor;
+    color: white;
+    padding: 0.4em 0.8em;
+    margin: 0 -20px 1em -20px; // Negative margin to span width if needed
+    border-radius: 0 4px 4px 0; // Rounded on right
+    width: 100%;
+    box-sizing: border-box;
+    font-size: 1.8em;
+    box-shadow: 2px 2px 5px rgba(0,0,0,0.1);
+}
+
+.reveal h2 {
+    color: $themeColor;
+    border-bottom: 2px solid lighten($themeColor, 40%);
+    padding-bottom: 0.2em;
+    margin-bottom: 0.5em;
+}
+
+.reveal h3, .reveal h4 {
+    color: lighten($themeColor, 10%);
+    margin-bottom: 0.5em;
+}
+
+
+// --- Footer ---
+// Quarto uses a div with class 'footer'
+.reveal .footer {
+    font-size: 14px;
+    position: absolute; // Absolute within the reveal container
+    bottom: 10px;
+    left: 0;
+    width: 100%;
+    text-align: center;
+    background-color: black; // Solid black background
+    color: white; // White text
+    z-index: 10;
+    padding: 5px 0;
+    // Removed border-top for a solid bar look
+}
+
+
+// --- Code Blocks ---
+.reveal pre {
+    background: #fff;
+    border: 1px solid #eee;
+    border-radius: 6px;
+    box-shadow: 0 4px 10px rgba(0,0,0,0.05);
+    width: 96%;
+    margin: 1.5em auto;
+}
+
+.reveal pre code {
+    padding: 1.2em;
+    max-height: 500px;
+    font-family: $codeFont;
+}
+
+
+// --- Images ---
+.reveal section img {
+    border: none;
+    box-shadow: none;
+    // Optional: add shadow to images
+    // box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+}

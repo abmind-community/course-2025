@@ -1,0 +1,6 @@
+.snakemake/
+results/
+gurobi.log
+
+slide/slide.html
+slide/*_files/
