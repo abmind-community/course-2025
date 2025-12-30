@@ -1,0 +1,1147 @@
+---
+title: "Geospatial Agent-Based Modeling with Mesa-Geo"
+author: "Boyu Wang"
+date: 01/04/2026
+date-format: YYYY.MM.DD
+format:
+  revealjs:
+    theme: [serif, style.scss]
+    include-in-header:
+      - banner.html
+    slide-number: true
+    center: false
+    margin: 0.0
+    transition: none
+    background-transition: none
+    hash: true
+    chalkboard: true
+    highlight-style: github
+    code-line-numbers: false
+    title-slide-attributes:
+      data-background-color: "#6ec5cb"
+    pointer:
+      key: "q"
+      color: "red"
+      pointerSize: 16
+      alwaysVisible: false
+revealjs-plugins:
+  - pointer
+editor_options: 
+  chunk_output_type: console
+
+---
+
+## Outline
+
+:::: {.columns}
+::: {.column width="33%"}
+:::{style="font-size:0.95em; line-height:1.35;"}
+1. **What are Mesa & Mesa-Geo?**
+2. **Why Geospatial ABM?**
+3. **ABM Frameworks with GIS Support**
+4. **GIS Primer**
+   - Spatial data models
+   - File formats
+   - Geospatial Python packages
+:::
+:::
+::: {.column width="33%"}
+:::{style="font-size:0.95em; line-height:1.35;"}
+5. **Mesa-Geo Architecture**
+6. **Core building blocks**
+   - GeoAgent
+   - Cell
+   - GeoSpace
+7. **Visualizing GeoSpace**
+8. **Example models**
+:::
+:::
+::: {.column width="33%"}
+:::{style="font-size:0.95em; line-height:1.35;"}
+9. **GSoC Idea 2025**
+10. **Towards Mesa-Geo v1.0**
+11. **Homework**
+12. **Resources**
+:::
+:::
+::::
+
+---
+
+## What are Mesa & Mesa-Geo?
+
+:::: {.columns}
+::: {.column width=60%"}
+* **Mesa** is an open-source agent-based modelling framework written in Python. Its modular design allows you to build, visualize and analyse ABMs quickly.
+* **Mesa-Geo** is Mesa's GIS extension. It adds spatial data structures and functions so you can import, manipulate, visualize and export geographic information for ABMs.
+:::
+
+::: {.column width="40%"}
+![](./img/mesa_geo_docs.png){width=95% fig-align="right"}
+:::
+::::
+
+---
+
+## What are Mesa & Mesa-Geo?
+
+:::: {.columns}
+::: {.column width=60%"}
+* **Mesa-Geo**: open-source project created in 2017.
+* Transferred into Mesa GitHub organization in 2022.
+* ~2k downloads per month (PyPI statistics as of Dec 2025), about 5% to 10% of total Mesa downloads.
+
+:::
+
+::: {.column width="40%"}
+![](./img/mesa_geo_star_history.png){width=100% fig-align="right"}
+:::
+::::
+
+---
+
+## Why Geospatial ABM?
+
+:::: {.columns}
+::: {.column width="60%"}
+Many real-world phenomena (land use, population density, transport) are spatially heterogeneous. Classic ABMs can't capture real geography or handle map projections.
+
+Integrating GIS into ABMs enables:
+
+* **Basemaps** for real-world backgrounds
+* **Spatial queries** (e.g., neighbourhood search, buffering)
+* **Raster & vector overlay** to combine multiple data sources
+:::
+::: {.column width="40%"}
+```{=html}
+<div style="position:absolute; top:120px; left:650px; width:360px;">
+  <div style="position:relative;">
+    <img src="./img/commuters.gif"
+         style="display:block; width:100%; height:auto; border:0; margin:0;" />
+    <div style="
+        position:absolute;
+        left:0; right:20px; bottom:50px;
+        padding:0.35em 0.35em;
+        font-size:0.45em;
+        line-height:1.2;
+        text-align:center;
+        font-family: "EB Garamond";
+      ">
+      An Urban Commuting Model with Synthetic Population in Buffalo, NY
+    </div>
+  </div>
+</div>
+```
+:::
+::::
+
+---
+
+## ABM Frameworks with GIS Support
+
+```{=html}
+<div style="font-size:0.70em; line-height:1.15;">
+  <table>
+    <colgroup>
+      <col style="width: 14%;">
+      <col style="width: 12.285%;">
+      <col style="width: 12.285%;">
+      <col style="width: 12.285%;">
+      <col style="width: 12.285%;">
+      <col style="width: 12.285%;">
+      <col style="width: 12.285%;">
+      <col style="width: 12.285%;">
+    </colgroup>
+
+    <tbody>
+      <tr class="even">
+      <th><strong> </strong></th>
+      <th>NetLogo</th>
+      <th>Repast Simphony</th>
+      <th>AnyLogic</th>
+      <th>MASON</th>
+      <th>GAMA</th>
+      <th>Mesa</th>
+      <th>AgentScript</th>
+    </tr>
+      <tr class="odd">
+        <td>Initial Release Year</td>
+        <td>1999</td>
+        <td>2000</td>
+        <td>2000</td>
+        <td>2003</td>
+        <td>2009</td>
+        <td>2015</td>
+        <td>2018</td>
+      </tr>
+
+      <tr class="even">
+        <td>License</td>
+        <td>GPL</td>
+        <td>BSD</td>
+        <td>Proprietary</td>
+        <td>Academic Free License 3.0</td>
+        <td>GPLv3</td>
+        <td>Apache 2.0</td>
+        <td>GPLv3</td>
+      </tr>
+
+      <tr class="odd">
+        <td>Implementation Language</td>
+        <td>Scala, Java</td>
+        <td>Java</td>
+        <td>Java</td>
+        <td>Java</td>
+        <td>Java</td>
+        <td>Python</td>
+        <td>JavaScript</td>
+      </tr>
+
+      <tr class="even">
+        <td>Model Development Language or Interface</td>
+        <td>NetLogo</td>
+        <td>ReLogo (dialect of Logo), statecharts (point-and-click), Groovy, Java</td>
+        <td>GUI, Java, UML-RT</td>
+        <td>Java</td>
+        <td>GAML (GAma Modeling Language)</td>
+        <td>Python</td>
+        <td>JavaScript</td>
+      </tr>
+
+      <tr class="odd">
+        <td>GIS Support</td>
+        <td>Through gis-extension</td>
+        <td>Yes</td>
+        <td>Yes</td>
+        <td>Through GeoMason extension</td>
+        <td>Yes</td>
+        <td>Through Mesa-Geo extension</td>
+        <td>Yes</td>
+      </tr>
+    </tbody>
+  </table>
+</div>
+```
+
+---
+
+## GIS Primer
+
+* ### Spatial Data Models
+* ### File Formats
+* ### Geospatial Python Packages
+
+---
+
+## Spatial Data Model: Vector Data
+
+- Represent **discrete** features such as points (e.g., trees), lines (e.g., roads) and polygons (e.g., administrative boundaries).
+- Useful to model individual objects (agents, roads, regions), compute spatial relationships (within / intersects / distance / buffer), and perform spatial operations such as spatial joins and overlays.
+
+:::: {.columns}
+::: {.column width="33%"}
+:::{style="font-size:0.8em; line-height:1.35;"}
+**Point**: a single coordinate, representing a location such as a tree.  
+
+```{=html}
+<svg viewBox="0 0 220 140" style="max-height:20vh; width:auto; display:block; margin:0.5em auto;">
+  <circle cx="60" cy="50" r="6" fill="#6ec5cb"/>
+  <circle cx="150" cy="35" r="6" fill="#6ec5cb"/>
+  <circle cx="120" cy="95" r="6" fill="#6ec5cb"/>
+  <circle cx="180" cy="110" r="6" fill="#6ec5cb"/>
+</svg>
+```
+:::
+:::
+::: {.column width="33%"}
+:::{style="font-size:0.8em; line-height:1.35;"}
+**Line**: a sequence of coordinates forming a path, such as a road or river.  
+
+```{=html}
+<svg viewBox="0 0 220 140" style="max-height:20vh; width:auto; display:block; margin:0.5em auto;">
+  <polyline
+    points="20,110 55,85 85,95 120,60 160,75 200,35"
+    fill="none"
+    stroke="#6ec5cb"
+    stroke-width="6"
+    stroke-linecap="round"
+    stroke-linejoin="round"
+  />
+  <g fill="#0b7b83">
+    <circle cx="20" cy="110" r="4"/><circle cx="55" cy="85" r="4"/>
+    <circle cx="85" cy="95" r="4"/><circle cx="120" cy="60" r="4"/>
+    <circle cx="160" cy="75" r="4"/><circle cx="200" cy="35" r="4"/>
+  </g>
+</svg>
+```
+:::
+:::
+
+::: {.column width="33%"}
+:::{style="font-size:0.8em; line-height:1.35;"}
+**Polygon**: a closed shape representing an area, such as a park or administrative boundary.  
+
+```{=html}
+<svg viewBox="0 0 220 140" style="max-height:20vh; width:auto; display:block; margin:0.5em auto;">
+  <polygon
+    points="55,30 175,40 190,95 120,120 45,90"
+    fill="rgba(110,197,203,0.35)"
+    stroke="#6ec5cb"
+    stroke-width="5"
+    stroke-linejoin="round"
+  />
+  <g fill="#0b7b83">
+    <circle cx="55" cy="30" r="4.5" />
+    <circle cx="175" cy="40" r="4.5" />
+    <circle cx="190" cy="95" r="4.5" />
+    <circle cx="120" cy="120" r="4.5" />
+    <circle cx="45" cy="90" r="4.5" />
+  </g>
+</svg>
+```
+:::
+:::
+:::: 
+
+---
+
+## Spatial Data Model: Raster Data
+
+:::: {.columns}
+::: {.column width=50%}
+
+* Represent **continuous** surfaces as a regular grid of cells (pixels).  Each cell stores a numeric value (e.g., elevation, land cover or population density).
+* Useful for modelling spatial phenomena that vary smoothly across space, such as terrain elevation, rainfall or suitability surfaces.
+
+:::
+::: {.column width=50%}
+```{=html}
+<svg viewBox="0 0 260 170" style="max-height:28vh; width:auto; display:block; margin:0.5em auto;">
+  <g transform="translate(30,20)">
+    <!-- cells (value-driven shades using theme color) -->
+    <!-- row 1 -->
+    <rect x="0"  y="0"  width="20" height="20" fill="rgba(110,197,203,0.15)"/>
+    <rect x="20" y="0"  width="20" height="20" fill="rgba(110,197,203,0.25)"/>
+    <rect x="40" y="0"  width="20" height="20" fill="rgba(110,197,203,0.35)"/>
+    <rect x="60" y="0"  width="20" height="20" fill="rgba(110,197,203,0.45)"/>
+    <rect x="80" y="0"  width="20" height="20" fill="rgba(110,197,203,0.55)"/>
+    <rect x="100" y="0" width="20" height="20" fill="rgba(110,197,203,0.65)"/>
+    <rect x="120" y="0" width="20" height="20" fill="rgba(110,197,203,0.55)"/>
+    <rect x="140" y="0" width="20" height="20" fill="rgba(110,197,203,0.45)"/>
+    <rect x="160" y="0" width="20" height="20" fill="rgba(110,197,203,0.35)"/>
+    <rect x="180" y="0" width="20" height="20" fill="rgba(110,197,203,0.25)"/>
+
+    <!-- row 2 -->
+    <rect x="0"  y="20" width="20" height="20" fill="rgba(110,197,203,0.10)"/>
+    <rect x="20" y="20" width="20" height="20" fill="rgba(110,197,203,0.20)"/>
+    <rect x="40" y="20" width="20" height="20" fill="rgba(110,197,203,0.30)"/>
+    <rect x="60" y="20" width="20" height="20" fill="rgba(110,197,203,0.40)"/>
+    <rect x="80" y="20" width="20" height="20" fill="rgba(110,197,203,0.55)"/>
+    <rect x="100" y="20" width="20" height="20" fill="rgba(110,197,203,0.75)"/>
+    <rect x="120" y="20" width="20" height="20" fill="rgba(110,197,203,0.65)"/>
+    <rect x="140" y="20" width="20" height="20" fill="rgba(110,197,203,0.50)"/>
+    <rect x="160" y="20" width="20" height="20" fill="rgba(110,197,203,0.35)"/>
+    <rect x="180" y="20" width="20" height="20" fill="rgba(110,197,203,0.25)"/>
+
+    <!-- row 3 (NoData example in the middle) -->
+    <rect x="0"  y="40" width="20" height="20" fill="rgba(110,197,203,0.10)"/>
+    <rect x="20" y="40" width="20" height="20" fill="rgba(110,197,203,0.18)"/>
+    <rect x="40" y="40" width="20" height="20" fill="rgba(110,197,203,0.28)"/>
+    <rect x="60" y="40" width="20" height="20" fill="rgba(110,197,203,0.42)"/>
+    <rect x="80" y="40" width="20" height="20" fill="rgba(110,197,203,0.58)"/>
+    <rect x="100" y="40" width="20" height="20" fill="#ffffff"/>
+    <rect x="120" y="40" width="20" height="20" fill="rgba(110,197,203,0.62)"/>
+    <rect x="140" y="40" width="20" height="20" fill="rgba(110,197,203,0.48)"/>
+    <rect x="160" y="40" width="20" height="20" fill="rgba(110,197,203,0.34)"/>
+    <rect x="180" y="40" width="20" height="20" fill="rgba(110,197,203,0.22)"/>
+
+    <!-- row 4 -->
+    <rect x="0"  y="60" width="20" height="20" fill="rgba(110,197,203,0.12)"/>
+    <rect x="20" y="60" width="20" height="20" fill="rgba(110,197,203,0.22)"/>
+    <rect x="40" y="60" width="20" height="20" fill="rgba(110,197,203,0.32)"/>
+    <rect x="60" y="60" width="20" height="20" fill="rgba(110,197,203,0.45)"/>
+    <rect x="80" y="60" width="20" height="20" fill="rgba(110,197,203,0.58)"/>
+    <rect x="100" y="60" width="20" height="20" fill="rgba(110,197,203,0.70)"/>
+    <rect x="120" y="60" width="20" height="20" fill="rgba(110,197,203,0.60)"/>
+    <rect x="140" y="60" width="20" height="20" fill="rgba(110,197,203,0.48)"/>
+    <rect x="160" y="60" width="20" height="20" fill="rgba(110,197,203,0.36)"/>
+    <rect x="180" y="60" width="20" height="20" fill="rgba(110,197,203,0.24)"/>
+
+    <!-- row 5 -->
+    <rect x="0"  y="80" width="20" height="20" fill="rgba(110,197,203,0.16)"/>
+    <rect x="20" y="80" width="20" height="20" fill="rgba(110,197,203,0.26)"/>
+    <rect x="40" y="80" width="20" height="20" fill="rgba(110,197,203,0.36)"/>
+    <rect x="60" y="80" width="20" height="20" fill="rgba(110,197,203,0.48)"/>
+    <rect x="80" y="80" width="20" height="20" fill="rgba(110,197,203,0.58)"/>
+    <rect x="100" y="80" width="20" height="20" fill="rgba(110,197,203,0.64)"/>
+    <rect x="120" y="80" width="20" height="20" fill="rgba(110,197,203,0.56)"/>
+    <rect x="140" y="80" width="20" height="20" fill="rgba(110,197,203,0.44)"/>
+    <rect x="160" y="80" width="20" height="20" fill="rgba(110,197,203,0.34)"/>
+    <rect x="180" y="80" width="20" height="20" fill="rgba(110,197,203,0.22)"/>
+
+    <!-- grid lines -->
+    <g stroke="#d9d9d9" stroke-width="1" fill="none">
+      <!-- vertical -->
+      <line x1="0" y1="0" x2="0" y2="100"/><line x1="20" y1="0" x2="20" y2="100"/>
+      <line x1="40" y1="0" x2="40" y2="100"/><line x1="60" y1="0" x2="60" y2="100"/>
+      <line x1="80" y1="0" x2="80" y2="100"/><line x1="100" y1="0" x2="100" y2="100"/>
+      <line x1="120" y1="0" x2="120" y2="100"/><line x1="140" y1="0" x2="140" y2="100"/>
+      <line x1="160" y1="0" x2="160" y2="100"/><line x1="180" y1="0" x2="180" y2="100"/>
+      <line x1="200" y1="0" x2="200" y2="100"/>
+      <!-- horizontal -->
+      <line x1="0" y1="0" x2="200" y2="0"/><line x1="0" y1="20" x2="200" y2="20"/>
+      <line x1="0" y1="40" x2="200" y2="40"/><line x1="0" y1="60" x2="200" y2="60"/>
+      <line x1="0" y1="80" x2="200" y2="80"/><line x1="0" y1="100" x2="200" y2="100"/>
+    </g>
+
+    <!-- label NoData cell -->
+    <text x="110" y="54" text-anchor="middle" font-size="10" fill="#888">NoData</text>
+  </g>
+
+  <!-- arrows/labels -->
+  <text x="130" y="152" text-anchor="middle" font-size="12" fill="#555">cells (pixels) with values</text>
+</svg>
+```
+:::
+::::
+
+---
+
+## Coordinate Reference Systems (CRS)
+
+:::: {.columns}
+::: {.column width="60%"}
+:::{style="font-size: 0.7em;"}
+
+* A **coordinate reference system** defines how 2D coordinates correspond to real-world locations. Without a common CRS, overlaying layers from different sources leads to misalignment.
+* **GCS (Geographic CRS)** uses angular units (**lat/lon**) on a reference ellipsoid (e.g., **WGS 84 / EPSG:4326**).
+* **PCS (Projected CRS)** uses linear units (**meters/feet**) after projecting the Earth to a plane (e.g., **Web Mercator / EPSG:3857**, **UTM zones**).
+* **Good practice:** use **one shared project CRS**. If multiple data sources come in different CRSs, **reproject** them into the project CRS before overlay/analysis.
+
+::: {.callout-note}
+## Learn more
+
+Coordinate Reference Systems in QGIS Documentation: <https://docs.qgis.org/latest/en/docs/gentle_gis_introduction/coordinate_reference_systems.html>
+:::
+:::
+:::
+::: {.column width="40%"}
+
+```{=html}
+<svg viewBox="0 0 360 190" style="max-height:28vh; width:auto; display:block; margin:0.5em auto;">
+  <!-- Left card: GCS -->
+  <rect x="15" y="20" width="135" height="145" rx="10" ry="10"
+        fill="rgba(110,197,203,0.12)" stroke="#6ec5cb" stroke-width="2"/>
+  <text x="82.5" y="42" text-anchor="middle" font-size="12" fill="#0b7b83" font-weight="600">
+    GCS (lon/lat)
+  </text>
+  <text x="82.5" y="60" text-anchor="middle" font-size="11" fill="#0b7b83">EPSG:4326</text>
+
+  <circle cx="82.5" cy="108" r="40" fill="rgba(110,197,203,0.20)" stroke="#6ec5cb" stroke-width="2"/>
+  <ellipse cx="82.5" cy="108" rx="23" ry="40" fill="none" stroke="rgba(11,123,131,0.55)" stroke-width="1.5"/>
+  <ellipse cx="82.5" cy="108" rx="40" ry="19" fill="none" stroke="rgba(11,123,131,0.55)" stroke-width="1.5"/>
+  <line x1="42.5" y1="108" x2="122.5" y2="108" stroke="rgba(11,123,131,0.55)" stroke-width="1.5"/>
+  <line x1="82.5" y1="68" x2="82.5" y2="148" stroke="rgba(11,123,131,0.55)" stroke-width="1.5"/>
+
+  <circle cx="100" cy="92" r="4" fill="#0b7b83"/>
+  <text x="82.5" y="160" text-anchor="middle" font-size="10.5" fill="#555">units: degrees</text>
+
+  <!-- Right card: PCS -->
+  <rect x="210" y="20" width="135" height="145" rx="10" ry="10"
+        fill="rgba(110,197,203,0.12)" stroke="#6ec5cb" stroke-width="2"/>
+  <text x="277.5" y="42" text-anchor="middle" font-size="12" fill="#0b7b83" font-weight="600">
+    PCS (x/y)
+  </text>
+  <text x="277.5" y="60" text-anchor="middle" font-size="11" fill="#0b7b83">EPSG:3857</text>
+
+  <rect x="236" y="72" width="83" height="78" fill="#ffffff" stroke="rgba(11,123,131,0.35)" stroke-width="1.5"/>
+  <g stroke="#eee" stroke-width="1">
+    <line x1="252" y1="78" x2="252" y2="156"/><line x1="268" y1="78" x2="268" y2="156"/>
+    <line x1="284" y1="78" x2="284" y2="156"/><line x1="300" y1="78" x2="300" y2="156"/>
+    <line x1="236" y1="94" x2="319" y2="94"/><line x1="236" y1="110" x2="319" y2="110"/>
+    <line x1="236" y1="126" x2="319" y2="126"/><line x1="236" y1="142" x2="319" y2="142"/>
+  </g>
+
+  <circle cx="293" cy="118" r="4" fill="#0b7b83"/>
+  <text x="277.5" y="160" text-anchor="middle" font-size="10.5" fill="#555">units: meters</text>
+
+  <!-- Arrow + label (fully in the gap) -->
+  <defs>
+  <marker id="arrow" markerWidth="7" markerHeight="7" refX="6" refY="3.5" orient="auto" markerUnits="strokeWidth">
+    <path d="M0,0 L7,3.5 L0,7 Z" fill="#6ec5cb"/>
+  </marker>
+  </defs>
+  <text x="180" y="96" text-anchor="middle" font-size="11" fill="#555">project</text>
+  <line x1="155" y1="112" x2="205" y2="112" stroke="#6ec5cb" stroke-width="3" marker-end="url(#arrow)"/>
+</svg>
+```
+
+:::
+::::
+
+---
+
+## File Formats 
+
+:::: {.columns}
+::: {.column width="50%"}
+:::{style="font-size: 0.7em;"}
+
+* **Shapefile (.shp)**: A widely used vector format and de facto standard for GIS data. A shapefile is actually a collection of files (e.g., .shp, .shx, .dbf), each storing geometry, index and attribute data. Shapefiles store only one geometry type per file (points, lines or polygons).
+
+* **GeoJSON**: A human-readable JSON format commonly used for web mapping. Supports multiple geometry types in a single file and is easy to share via REST APIs.
+
+* **KML / KMZ**: An XML-based format developed for Google Earth and now an OGC standard. KML allows multiple geometries and even raster data when compressed as KMZ.
+
+:::
+:::
+::: {.column width="50%"}
+:::{style="font-size: 0.7em;"}
+
+* **GeoPackage (.gpkg)**: A single-file SQLite database that can store multiple vector and raster layers. It is the default vector format for QGIS and increasingly popular.
+
+* **GeoTIFF (.tif)**: The most common raster format; a TIFF image with embedded geographic metadata. Supports multiple bands, high bit depths and georeferencing tags.
+
+* **GeoParquet (.parquet)**: A columnar, compressed format for vector data based on Apache Parquet. It is efficient for large datasets and works well with cloud/data-lake workflows.
+
+:::
+:::
+::::
+::: {.callout-note}
+##  Quick reference
+Full list of GIS formats: <https://gisgeography.com/gis-formats>
+:::
+
+---
+
+## Geospatial Python Packages
+
+* **GeoPandas**: Extends pandas to handle **vector data**.  Each row of a `GeoDataFrame` represents a feature with a geometry (Shapely object) and attribute columns; supports spatial joins, overlays and CRS transformations.
+* **Rasterio**: Provides Pythonic access to **raster datasets**.  Built on GDAL, it reads and writes formats such as GeoTIFF, and supports windowed reads, metadata access and creation of new rasters.
+* **Shapely**: Performs geometric operations (intersection, union, buffering) on planar features.
+* **PyProj**: Interfaces with PROJ to define and convert between coordinate reference systems (CRS).
+* **Rtree**: Implements spatial indexing, enabling fast nearest-neighbour and intersection queries.
+
+---
+
+## `geopandas`
+
+:::: {.columns}
+::: {.column width="50%"}
+### `pandas` DataFrame
+
+![](./img/dataframe.svg){style="max-height:22vh; width:auto; display:block; margin:0.4em auto;"}
+
+<span style="font-size:0.6em; display:block; text-align:center;">
+Source: [pandas documentation](https://pandas.pydata.org/docs/getting_started/intro_tutorials/01_table_oriented.html)
+</span>
+
+**Tabular only**  
+No `geometry` • No CRS • No spatial ops
+:::
+
+::: {.column width="50%"}
+### `geopandas` GeoDataFrame
+
+![](./img/geodataframe.svg){style="max-height:40vh; width:auto; display:block; margin:0.4em auto;"}
+<span style="font-size:0.6em; display:block; text-align:center;">
+Source: [geopandas documentation](https://geopandas.org/en/stable/getting_started/introduction.html)
+</span>
+
+**Geospatial table**  
+`geometry` column • CRS-aware • spatial ops (`sjoin`, `overlay`, `to_crs`, etc)
+:::
+::::
+
+---
+
+## `rasterio`
+
+:::: {.columns}
+::: {.column width="45%"}
+:::{style="font-size:0.82em; line-height:1.25;"}
+* Read/write raster datasets (e.g., GeoTIFF) as **NumPy arrays**.
+* Key concepts:
+  - **rows × cols**: matrix shape
+  - **cell**: one pixel in the grid
+  - **cell value**: numeric attribute (e.g., elevation)
+  - **resolution**: cell size (e.g., 30m × 30m)
+  - **extent**: bounding box of the raster
+  - **bands**: multiple layers (e.g., RGB / time / variables)
+  - **CRS**: reference system that gives meaning to coordinates (e.g., EPSG code)
+:::
+:::
+
+::: {.column width="55%"}
+```{=html}
+<svg viewBox="0 0 560 270" style="max-height:40vh; width:auto; display:block; margin:0.2em auto;">
+  <!-- Frame (extent) -->
+  <rect x="40" y="30" width="260" height="190"
+        fill="#ffffff" stroke="#6ec5cb" stroke-width="1.2"/>
+  <text x="170" y="22" text-anchor="middle" font-size="12" fill="#555">extent (bounds)</text>
+
+  <!-- Grid cells (rows x cols) -->
+  <g>
+    <!-- 6 cols x 5 rows, cell = 43.33 x 38 -->
+    <!-- row 0 -->
+    <rect x="40"    y="30"  width="43.33" height="38" fill="rgba(110,197,203,0.20)"/>
+    <rect x="83.33" y="30"  width="43.33" height="38" fill="rgba(110,197,203,0.32)"/>
+    <rect x="126.66" y="30" width="43.33" height="38" fill="rgba(110,197,203,0.44)"/>
+    <rect x="170"   y="30"  width="43.33" height="38" fill="rgba(110,197,203,0.56)"/>
+    <rect x="213.33" y="30" width="43.33" height="38" fill="rgba(110,197,203,0.42)"/>
+    <rect x="256.66" y="30" width="43.33" height="38" fill="rgba(110,197,203,0.28)"/>
+
+    <!-- row 1 -->
+    <rect x="40"    y="68"  width="43.33" height="38" fill="rgba(110,197,203,0.16)"/>
+    <rect x="83.33" y="68"  width="43.33" height="38" fill="rgba(110,197,203,0.28)"/>
+    <rect x="126.66" y="68" width="43.33" height="38" fill="rgba(110,197,203,0.40)"/>
+    <rect x="170"   y="68"  width="43.33" height="38" fill="rgba(110,197,203,0.62)"/>
+    <rect x="213.33" y="68" width="43.33" height="38" fill="rgba(110,197,203,0.50)"/>
+    <rect x="256.66" y="68" width="43.33" height="38" fill="rgba(110,197,203,0.30)"/>
+
+    <!-- row 2 -->
+    <rect x="40"    y="106" width="43.33" height="38" fill="rgba(110,197,203,0.14)"/>
+    <rect x="83.33" y="106" width="43.33" height="38" fill="rgba(110,197,203,0.24)"/>
+    <rect x="126.66" y="106" width="43.33" height="38" fill="rgba(110,197,203,0.36)"/>
+    <rect x="170"   y="106" width="43.33" height="38" fill="rgba(110,197,203,0.70)"/>
+    <rect x="213.33" y="106" width="43.33" height="38" fill="rgba(110,197,203,0.46)"/>
+    <rect x="256.66" y="106" width="43.33" height="38" fill="rgba(110,197,203,0.26)"/>
+
+    <!-- row 3 -->
+    <rect x="40"    y="144" width="43.33" height="38" fill="rgba(110,197,203,0.18)"/>
+    <rect x="83.33" y="144" width="43.33" height="38" fill="rgba(110,197,203,0.30)"/>
+    <rect x="126.66" y="144" width="43.33" height="38" fill="rgba(110,197,203,0.42)"/>
+    <rect x="170"   y="144" width="43.33" height="38" fill="rgba(110,197,203,0.58)"/>
+    <rect x="213.33" y="144" width="43.33" height="38" fill="rgba(110,197,203,0.40)"/>
+    <rect x="256.66" y="144" width="43.33" height="38" fill="rgba(110,197,203,0.24)"/>
+
+    <!-- row 4 -->
+    <rect x="40"    y="182" width="43.33" height="38" fill="rgba(110,197,203,0.22)"/>
+    <rect x="83.33" y="182" width="43.33" height="38" fill="rgba(110,197,203,0.34)"/>
+    <rect x="126.66" y="182" width="43.33" height="38" fill="rgba(110,197,203,0.46)"/>
+    <rect x="170"   y="182" width="43.33" height="38" fill="rgba(110,197,203,0.52)"/>
+    <rect x="213.33" y="182" width="43.33" height="38" fill="rgba(110,197,203,0.36)"/>
+    <rect x="256.66" y="182" width="43.33" height="38" fill="rgba(110,197,203,0.22)"/>
+  </g>
+
+  <!-- Grid lines -->
+  <g stroke="#e6e6e6" stroke-width="1">
+    <!-- vertical -->
+    <line x1="40" y1="30" x2="40" y2="220"/>
+    <line x1="83.33" y1="30" x2="83.33" y2="220"/>
+    <line x1="126.66" y1="30" x2="126.66" y2="220"/>
+    <line x1="170" y1="30" x2="170" y2="220"/>
+    <line x1="213.33" y1="30" x2="213.33" y2="220"/>
+    <line x1="256.66" y1="30" x2="256.66" y2="220"/>
+    <line x1="300" y1="30" x2="300" y2="220"/>
+    <!-- horizontal -->
+    <line x1="40" y1="30"  x2="300" y2="30"/>
+    <line x1="40" y1="68"  x2="300" y2="68"/>
+    <line x1="40" y1="106" x2="300" y2="106"/>
+    <line x1="40" y1="144" x2="300" y2="144"/>
+    <line x1="40" y1="182" x2="300" y2="182"/>
+    <line x1="40" y1="220" x2="300" y2="220"/>
+  </g>
+
+  <!-- Row/Col labels -->
+  <text x="170" y="250" text-anchor="middle" font-size="12" fill="#555">columns (width)</text>
+  <text x="18" y="125" text-anchor="middle" font-size="12" fill="#555" transform="rotate(-90 18 125)">rows (height)</text>
+
+  <!-- Highlight one cell -->
+  <rect x="170" y="106" width="43.33" height="38" fill="none" stroke="#0b7b83" stroke-width="3"/>
+  <text x="191.66" y="129" text-anchor="middle" font-size="11" fill="#0b7b83">72</text>
+
+  <!-- Cell value arrow -->
+  <line x1="213.33" y1="125" x2="320" y2="125" stroke="#6ec5cb" stroke-width="2.5"/>
+  <text x="332" y="129" font-size="12" fill="#555">cell value</text>
+
+  <!-- Resolution (cell size) annotation -->
+  <line x1="40" y1="232" x2="83.33" y2="232" stroke="#6ec5cb" stroke-width="3"/>
+  <text x="61.66" y="266" text-anchor="middle" font-size="12" fill="#555">resolution</text>
+  <text x="61.66" y="252" text-anchor="middle" font-size="11" fill="#555">30m</text>
+
+  <!-- Metadata box: CRS + transform -->
+  <rect x="360" y="26" width="180" height="60"
+        fill="rgba(110,197,203,0.10)" stroke="#6ec5cb" stroke-width="1.5"/>
+  <text x="450" y="47" text-anchor="middle" font-size="12" fill="#0b7b83" font-weight="600">metadata</text>
+  <text x="450" y="64" text-anchor="middle" font-size="11" fill="#555">CRS: (e.g., EPSG:4326)</text>
+  <text x="450" y="79" text-anchor="middle" font-size="11" fill="#555">transform: row/col ↔ coordinates</text>
+
+  <!-- Bands panel -->
+  <text x="450" y="118" text-anchor="middle" font-size="12" fill="#0b7b83" font-weight="600">bands</text>
+
+  <!-- Stack of bands -->
+  <rect x="405" y="132" width="90" height="30" fill="rgba(110,197,203,0.25)" stroke="#e6e6e6" stroke-width="1"/>
+  <rect x="405" y="165" width="90" height="30" fill="rgba(110,197,203,0.35)" stroke="#e6e6e6" stroke-width="1"/>
+  <rect x="405" y="198" width="90" height="30" fill="rgba(110,197,203,0.45)" stroke="#e6e6e6" stroke-width="1"/>
+  <text x="450" y="152" text-anchor="middle" font-size="11" fill="#555">band 1</text>
+  <text x="450" y="185" text-anchor="middle" font-size="11" fill="#555">band 2</text>
+  <text x="450" y="218" text-anchor="middle" font-size="11" fill="#555">band 3</text>
+
+  <text x="450" y="246" text-anchor="middle" font-size="11" fill="#555">array shape: (bands, rows, cols)</text>
+</svg>
+```
+:::
+::::
+
+---
+
+## Further Reading
+
+:::: {.columns}
+::: {.column width=45%}
+**Geocomputation with Python**: an open-source book on geographic data analysis with Python, publicly available at [`py.geocompx.org`](https://py.geocompx.org)
+:::
+::: {.column width="55%"}
+::: {.figure style="text-align:center;"}
+![](./img/geocompx_python.png){style="max-height: 50vh; width: auto; display:block; margin:0 auto;"}
+:::
+:::
+::::
+
+---
+
+## Mesa-Geo Architecture
+
+::: {.figure style="text-align:center;"}
+![](./img/architecture_mesa_geo.png){.fit-figure .fit-figure-lg}
+High-level component diagram of Mesa & Mesa-Geo
+:::
+
+---
+
+## GeoAgent & Cell
+
+* A **GeoAgent** is a Mesa agent with a `geometry` (a Shapely shape such as a polygon or point) and a coordinate reference system (`crs`).  It can perform geometric and topological operations (e.g., intersection tests) and knows its location in geographic space.
+* A **Cell** is an agent that lives on a raster grid.  It stores an `(x, y)` coordinate as well as `(row, col)` indices that map into a matrix representation.
+
+::: {.figure style="text-align:center;"}
+![](./img/class_diagram_geoagent.png){.fit-figure .fit-figure-sm}
+Class diagram of the `Agent`, `GeoAgent`, and `Cell` classes
+:::
+
+---
+
+## GeoAgent
+
+:::: {.columns}
+::: {.column width="50%"}
+
+### Define a `GeoAgent` class
+
+```python
+# agents.py
+
+import mesa
+import mesa_geo as mg
+
+class PersonAgent(mg.GeoAgent):
+    def __init__(self, model, geometry, crs, income=0):
+        super().__init__(model, geometry=geometry, crs=crs)
+        self.income = income
+
+    def step(self):
+        ...
+```
+:::
+::: {.column width="50%"}
+
+### Create many agents from a GeoDataFrame
+
+```python
+# model.py
+
+import geopandas as gpd
+import mesa
+import mesa_geo as mg
+
+from .agents import PersonAgent
+
+class MyModel(mesa.Model):
+
+    def __init__(self, population_file, crs):
+        ...
+
+        # create agents from geodataframe file
+        gdf = gpd.read_file(population_file).to_crs(crs)
+        creator = mg.AgentCreator(PersonAgent, model=self)
+        agents = creator.from_GeoDataFrame(gdf)
+
+        # put agents into a geospace
+        self.space = GeoSpace(crs=crs)
+        self.space.add_agents(agents)
+```
+:::
+::::
+
+---
+
+## Cell
+
+:::: {.columns}
+::: {.column width="50%"}
+
+### Define a `Cell` class
+
+```python
+# space.py
+
+import mesa
+import mesa_geo as mg
+
+class LakeCell(mg.Cell):
+    def __init__(
+        self,
+        model,
+        pos: mesa.space.Coordinate | None = None,
+        indices: mesa.space.Coordinate | None = None,
+    ):
+        super().__init__(model, pos, indices)
+        self.elevation = None
+        self.water_level = None
+        self.water_level_normalized = None
+
+    def step(self):
+        ...
+
+```
+:::
+::: {.column width="50%"}
+
+### Create many cells from a raster layer
+
+```python
+# space.py
+
+import gzip
+import mesa_geo as mg
+import numpy as np
+
+class CraterLake(mg.GeoSpace):
+    ...
+
+    def set_elevation_layer(self, elevation_gzip_file, crs):
+        layer = mg.RasterLayer.from_file(
+            elevation_gzip_file,
+            model=self.model,
+            cell_cls=LakeCell,
+            attr_name="elevation",
+            rio_opener=gzip.open,
+        )
+        layer.apply_raster(
+            data=np.zeros((1, layer.height, layer.width)),
+            attr_name="water_level",
+        )
+        super().add_layer(layer)
+```
+:::
+::::
+
+---
+
+## GeoSpace
+
+The **GeoSpace** object extends Mesa’s `Space` concept to include both
+vector and raster layers.  Each layer can contain agents or pixels, and
+agents can query the space for neighbours or search for cells that satisfy
+certain criteria.  A simple class diagram is shown below:
+
+::: {.figure style="text-align:center;"}
+![](./img/class_diagram_geospace.png){.fit-figure .fit-figure-md}
+Class diagram of `GeoSpace` and its related classes
+:::
+
+---
+
+## Visualizing GeoSpace
+
+
+:::: {.columns}
+::: {.column width="45%"}
+:::{style="font-size:0.77em; line-height:1.25;"}
+You typically do **three things**:
+
+1. **Write a portrayal function**
+   - **GeoAgent (vector)** → return a *dict* of Leaflet style options (and optional popup text).
+   - **Cell (raster)** → return an *(r, g, b, a)* tuple.
+2. **Build a viz page** using `SolaraViz(...)`
+3. **Add a map component** via `make_geospace_component(...)` (set `zoom`, optional `tiles`, etc.)
+
+::: {.callout-warning}
+### Mesa version note
+
+This workflow works with Mesa 3.2, but not 3.3 or 3.4, which introducted breaking changes to visualization API. Pin your Mesa version to 3.2 as a workaround.
+:::
+:::
+:::
+
+::: {.column width="55%"}
+
+Example usage
+
+:::{style="font-size:0.80em; line-height:1.15;"}
+
+```python
+# (often in notebook or app.py; model class stays in model.py)
+
+from mesa.visualization import SolaraViz
+from mesa_geo.visualization import make_geospace_component
+
+def draw(agent):
+    # vector agents → Leaflet options dict
+    if getattr(agent, "atype", None) == "infected":
+        return {"color": "red"}
+    return {"color": "green", "opacity": 0.6}
+
+model_params = ...
+
+page = SolaraViz(
+    MyModel(),
+    name="My Awesome Model",
+    model_params=model_params,
+    components=[
+        make_geospace_component(draw, zoom=12),
+        ...
+    ],
+)
+
+page
+```
+:::
+:::
+::::
+
+---
+
+## Example Models
+
+:::: {.columns}
+::: {.column width="50%"}
+### Docs
+
+![](./img/mesa_geo_examples.png){width=100%}
+
+<span style="font-size:0.7em; display:block; text-align:center;">
+<https://mesa-geo.readthedocs.io/stable/examples/overview.html>
+</span>
+:::
+
+::: {.column width="50%"}
+### Source code (mesa-examples/gis)
+
+![](./img/mesa_geo_examples_github.png){width=100%}
+
+<span style="font-size:0.7em; display:block; text-align:center;">
+<https://github.com/mesa/mesa-examples/tree/main/gis>
+</span>
+:::
+::::
+
+---
+
+## Example: Digital Elevation
+
+:::: {.columns}
+::: {.column width="50%"}
+![](./img/rainfall.png){width=100%}
+<span style="display:block; text-align:center;">
+Rainfall Model
+</span>
+:::
+::: {.column width="50%"}
+:::{style="font-size: 0.9em;"}
+- **GeoSpace:** a raster layer representing elevations.
+- **GeoAgents:** raindrops.
+- At each time step, raindrops are randomly created across the landscape to simulate rainfall.
+- The raindrops flow from cells of higher elevation to lower elevation based on their eight surrounding cells (i.e., Moore neighbourhood).
+:::
+:::
+::::
+
+---
+
+## Example: Multiple Raster Layers
+
+:::: {.columns}
+::: {.column width="50%"}
+![](./img/urban_growth.png){width=100%}
+<span style="display:block; text-align:center;">
+Urban Growth Model
+</span>
+:::
+::: {.column width="50%"}
+:::{style="font-size: 0.9em;"}
+- **GeoSpace:** multiple raster layers representing slope, road, land use, urban area, and so on.
+- **Cells:** land parcels.
+- At each time step, each land parcel is decided whether it is suitable to be urbanized, based on the input raster layers as well as the user defined coefficients.
+:::
+:::
+::::
+
+---
+
+## Example: Raster & Vector Overlay
+
+:::: {.columns}
+::: {.column width="50%"}
+![](./img/population.png){width=100%}
+<span style="display:block; text-align:center;">
+Population Model
+</span>
+:::
+::: {.column width="50%"}
+:::{style="font-size: 0.9em;"}
+- **GeoSpace:**
+  - a raster layer of population data for each cell.
+  - a vector layer representing a lake.
+- **GeoAgent:** people, created based on the population data.
+- The agents move randomly to neighbouring cells at each time step.
+:::
+:::
+::::
+
+---
+
+## Example: Road Network
+
+:::: {.columns}
+::: {.column width="50%"}
+![](./img/agents_networks.png){width=100%}
+<span style="display:block; text-align:center;">
+Agents and Networks Model
+</span>
+:::
+::: {.column width="50%"}
+:::{style="font-size: 0.9em;"}
+- **GeoSpace:** multiple vector layers, including buildings, lakes, and a road network. The road network is constructed
+from polyline data.
+- **GeoAgent:** commuters.
+- Buildings are randomly assigned to agents as their home and workplaces.
+- Agents' commute routes can be found as the shortest path between entrances of their home and workplaces. Their movements are constrained on the road network.
+:::
+:::
+::::
+
+---
+
+## Example: Ploygons
+
+:::: {.columns}
+::: {.column width="50%"}
+![](./img/geo_schelling.png){width=100%}
+<span style="display:block; text-align:center;">
+GeoSchelling Model
+</span>
+:::
+::: {.column width="50%"}
+:::{style="font-size: 0.9em;"}
+- **GeoSpace:** only the agent layer containing GeoAgents.
+- **GeoAgents:** the Level 2 European Nomenclature of Territorial Units for Statistics (NUTS-2) regions.
+- During the running of the model, a polygon queries the colors of the surrounding polygon and if the ratio falls below
+a certain threshold (e.g., 40% of the same color), the agent moves to an uncolored polygon.
+:::
+:::
+::::
+
+---
+
+## Example: Points & Ploygons
+
+:::: {.columns}
+::: {.column width="50%"}
+![](./img/geo_schelling_points.png){width=100%}
+<span style="display:block; text-align:center;">
+GeoSchelling Points Model
+</span>
+:::
+::: {.column width="50%"}
+:::{style="font-size: 0.9em;"}
+- **GeoSpace:** only the agent layer containing GeoAgents.
+- **GeoAgents:**
+  - NUTS-2 regions.
+  - People residing in NUTS-2 regions.
+- Each person resides in a randomly assigned region and checks the color ratio of its region against a pre-defined
+"happiness" threshold at every time step.
+- If the ratio falls below a certain threshold (e.g., 40%), the agent is found to be "unhappy", and randomly moves to
+another region.
+:::
+:::
+::::
+
+---
+
+## GSoC Idea (carried over): Unifying Geospatial Support in Mesa-Geo
+
+:::: {.columns}
+::: {.column width="50%"}
+- This was listed as an "Additional Idea" in the Mesa GSoC 2025 ideas page, but was not submitted last year.
+- Source: [Mesa Wiki: xiv ‐ Google Summer of Code 2025](https://github.com/mesa/mesa/wiki/xiv-%E2%80%90-Google-Summer-of-Code-2025#unifying-geospatial-support-in-mesa)
+:::
+::: {.column width="50%"}
+![](./img/mesa_geo_gsoc_idea.png) {.fit-figure .fit-figure-sm}
+:::
+::::
+
+---
+
+## Towards Mesa-Geo v1.0
+
+:::: {.columns}
+::: {.column width="50%"}
+- Design sketch from last year's training program
+- Discussion comment (context + original figure): [link](https://github.com/mesa/mesa/discussions/2585#discussioncomment-11732488)
+:::
+
+::: {.column width="50%"}
+```{=html}
+<div style="position:absolute; top:160px; left:600px; width:480px;">
+  <div style="position:relative;">
+    <img src="./img/mesa_geo_architecture_idea.jpg"
+         style="display:block; width:100%; height:auto; border:0; margin:0;" />
+  </div>
+</div>
+```
+:::
+::::
+
+---
+
+## Homework
+
+:::{style="font-size: 0.9em;"}
+Read and try the **Mesa-Geo Introductory Tutorial**:  
+<https://mesa-geo.readthedocs.io/stable/tutorials/intro_tutorial.html>
+
+**Goal:** By the end, you should understand how the tutorial uses:
+
+- GeoAgent & GeoSpace
+- vector data loading (GeoJSON)
+- the visualization component
+
+::: {.callout-note}
+### While you work through it, please share feedback if anything could be improved
+- unclear wording / missing context, confusing setup steps (install, data download, versions)
+- broken links, typos, or code that doesn’t run as written
+- suggestions to make the tutorial more beginner-friendly (what to explain earlier, what to move later)
+
+You can post feedback in our group chat, or open an issue / discussion in the Mesa-Geo repo.
+:::
+:::
+
+---
+
+## Resources
+
+:::{style="font-size: 0.9em;"}
+You can explore Mesa-Geo further via the following links:
+
+* **Source code:** [`https://github.com/mesa/mesa-geo`](https://github.com/mesa/mesa-geo)
+* **Documentation & examples:** [`https://mesa-geo.readthedocs.io`](https://mesa-geo.readthedocs.io)
+* **Example models repository:** [`https://github.com/mesa/mesa-examples/tree/main/gis`](https://github.com/mesa/mesa-examples/tree/main/gis)
+* **Join the conversation:**
+  - Matrix chat room: [`https://matrix.to/#/#mesa-geo:matrix.org`](https://matrix.to/#/#mesa-geo:matrix.org)
+  - Bi-weekly dev meeting:
+    [`https://github.com/mesa/mesa/discussions`](https://github.com/mesa/mesa/discussions)
+  - Discussion board:
+    [`https://github.com/mesa/mesa-geo/discussions`](https://github.com/mesa/mesa-geo/discussions)
+:::
