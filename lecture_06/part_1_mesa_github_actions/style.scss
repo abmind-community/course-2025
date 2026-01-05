@@ -1,0 +1,383 @@
+/*-- scss:defaults --*/
+
+// Variables -----------------------------------
+$themeColor: #6ec5cb; // Primary turquoise inspired by the Mesa‑Geo palette
+$accentColor: #f0f0f0;
+$textColor: #222;
+$backgroundColor: #fff;
+
+// Overwrite theme settings --------------------
+// Colors
+$mainColor: $textColor;
+$headingColor: $themeColor; // Headings use theme color
+$linkColor: $themeColor;
+$linkColorHover: lighten($themeColor, 15%);
+$selectionBackgroundColor: lighten($themeColor, 30%);
+
+// Backgrounds
+$backgroundColor: #fff;
+$overlayElementBgColor: 0, 0, 0;
+$overlayElementFgColor: 240, 240, 240;
+
+// Fonts
+$mainFontSize: 24px;
+$mainFont: 'Garamond', "Noto Serif SC", "Songti SC", "STSong", serif;
+$headingFont: 'Garamond', "Noto Serif SC", "Songti SC", "STSong", serif;
+$codeFont: 'Consolas', 'Monaco', 'Andale Mono', 'Ubuntu Mono', monospace;
+
+// Heading Settings
+$headingTextShadow: none;
+$headingLetterSpacing: normal;
+$headingTextTransform: none;
+$headingFontWeight: 600;
+$heading1Size: 2.0em; // Slightly larger
+$heading2Size: 1.5em;
+$heading3Size: 1.2em;
+$heading4Size: 1.0em;
+
+/*-- scss:rules --*/
+
+// Import Noto Sans SC
+@import url('https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@100..900&display=swap');
+
+// Mixins
+@include dark-bg-text-color(#fff);
+
+
+/* =============================================
+   Global Layout & Typography
+   ============================================= */
+
+.reveal .slides {
+    text-align: left; // Default alignment
+}
+
+// Better readability
+.reveal p,
+.reveal li {
+    line-height: 1.6;
+}
+
+// Spacing between list items
+.reveal ul li,
+.reveal ol li {
+    margin-bottom: 0.5em;
+    margin-top: 0; // Reset top margin
+}
+
+.reveal ul,
+.reveal ol {
+    display: block; // Fix inline-block issue
+    margin-left: 1.5em;
+}
+
+.reveal ul li::marker,
+.reveal ol li::marker {
+  color: $themeColor;
+}
+
+.reveal .slides section:not(#title-slide) h1,
+.reveal .slides section:not(#title-slide) h2,
+.reveal .slides section:not(#title-slide) h3,
+.reveal .slides section:not(#title-slide) h4 {
+  color: #000 !important;
+  border-bottom: none !important;
+}
+
+
+/* =============================================
+   Components
+   ============================================= */
+
+// --- Title Slide ---
+// Targeting the title content specifically
+#title-slide {
+    color: $themeColor;
+
+    .title {
+        // The blue box effect - reduced size
+        background-color: transparent;
+        color: white;
+        box-shadow: none;
+        padding: 0;
+        margin-bottom: 1.2em;
+
+        h1 {
+            color: white;
+            margin: 0;
+            font-size: 1.2em; // Reduced font size
+            background: none; // Remove default h1 background
+            padding: 0;
+            text-transform: none !important;
+        }
+    }
+
+    .subtitle {
+        margin-top: 0.5em;
+        font-size: 1.5em;
+        color: lighten(white, 20%);
+        font-weight: 300;
+    }
+
+    .quarto-title-authors {
+        display: block;
+        padding: 0;
+    }
+
+    .quarto-title-author-name,
+    .quarto-title-affiliation,
+    .date {
+        font-size: 1em;
+        color: white;
+        display: block;
+    }
+}
+
+.reveal .slides section:not(#title-slide) h1 {
+  background: none !important;
+  box-shadow: none !important;
+  margin: 0 0 0.6em 0 !important;
+  padding: 0 !important;
+  border-radius: 0 !important;
+}
+
+.reveal h2 {
+    color: $themeColor;
+    border-bottom: 2px solid lighten($themeColor, 40%);
+    padding-bottom: 0.2em;
+    margin-bottom: 0.5em;
+}
+
+.reveal h3, .reveal h4 {
+    color: lighten($themeColor, 10%);
+    margin-bottom: 0.5em;
+}
+
+// --- Code Blocks ---
+.reveal pre {
+    background: #fff;
+    border: 1px solid #eee;
+    border-radius: 6px;
+    box-shadow: 0 4px 10px rgba(0,0,0,0.05);
+    width: 96%;
+    margin: 1.5em auto;
+}
+
+.reveal pre code {
+    padding: 1.2em;
+    max-height: 500px;
+    font-family: $codeFont;
+}
+
+
+// --- Images ---
+.reveal section img {
+    border: none;
+    box-shadow: none;
+    // Optional: add shadow to images
+    // box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+}
+
+.reveal .slides caption {
+  text-align: center !important;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.reveal .slides section {
+  color: #000;
+}
+
+.reveal {
+  position: relative;
+}
+
+/* ===== Banner injected via include-in-header ===== */
+$bannerH: 14vh; /* thicker; tweak to match PPT ratio */
+
+.reveal .header {
+  position: fixed;         /* full viewport, not slide column width */
+  top: 0;
+  left: 0;
+  width: 100vw;            /* force edge-to-edge */
+  height: $bannerH;
+  z-index: 9999;
+  pointer-events: none;
+}
+
+.reveal .header .abm-banner {
+  width: 100%;
+  height: 100%;
+  background: $themeColor;
+}
+
+/* push content below the banner (non-title slides) */
+.reveal .slides section:not(#title-slide),
+.reveal .slides section section:not(#title-slide) {
+  padding-top: calc(#{$bannerH} + 1.2em) !important;
+  box-sizing: border-box;
+}
+
+/* print / view-print friendliness */
+@media print {
+  .reveal .header {
+    position: fixed;
+  }
+  .reveal, .reveal * {
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+}
+
+/* push content below the banner (non-title slides) */
+.reveal .slides section:not(#title-slide) {
+  padding-top: calc(#{$bannerH} + 1.2em) !important;
+  box-sizing: border-box;
+}
+
+/* push slide content below the banner */
+.reveal .slides section:not(#title-slide),
+.reveal .slides section section:not(#title-slide) {
+  padding-top: calc(#{$bannerH} + 1.2em) !important;
+  box-sizing: border-box;
+}
+
+.reveal .slides section:not(#title-slide),
+.reveal .slides section section:not(#title-slide) {
+  padding-top: calc(#{$bannerH} + 1.2em) !important;
+  box-sizing: border-box;
+}
+
+.reveal .slides section {
+  width: 100% !important;
+}
+
+
+/* =============================================
+   Figures / Images (responsive within Reveal scaling)
+   ============================================= */
+
+/* Use these classes on markdown images: { .fit-figure .fit-figure-md } */
+.reveal section img.fit-figure {
+  display: block;
+  margin: 0.6em auto 0 auto;
+  width: auto !important;
+  height: auto !important;
+  object-fit: contain;
+  /* Avoid Reveal theme overriding */
+  box-shadow: none !important;
+  border: none !important;
+}
+
+/* Sizes tuned for 1050x700 slides (scale nicely with Reveal's transform) */
+.reveal section img.fit-figure.fit-figure-lg {
+  max-width: 92% !important;
+  max-height: 380px !important;  /* ~55% of slide height */
+}
+
+.reveal section img.fit-figure.fit-figure-md {
+  max-width: 85% !important;
+  max-height: 260px !important;  /* good under bullet lists */
+}
+
+.reveal section img.fit-figure.fit-figure-sm {
+  max-width: 75% !important;
+  max-height: 200px !important;
+}
+
+/* Center figure captions */
+.reveal section figure figcaption {
+  text-align: center;
+  margin-top: 0.35em;
+  font-size: 0.75em;
+  opacity: 0.9;
+}
+
+.reveal .figure p {
+  text-align: center !important;
+  margin-top: 0.4em;
+  font-size: 0.8em;
+  opacity: 0.85;
+}
+
+/* Remove the extra wrapper styling Quarto adds */
+.reveal .code-with-copy {
+  border: none !important;
+  background: transparent !important;
+  box-shadow: none !important;
+}
+
+/* The actual code box */
+.reveal pre {
+  background: #f3f4f6 !important;   /* light gray */
+  box-shadow: none !important;
+  border-radius: 10px;
+  padding: 0.9em 1.0em !important;
+  margin: 0.7em 0 !important;
+  width: 100% !important;
+}
+
+/* Ensure the inner code doesn't add its own box */
+.reveal pre code {
+  background: transparent !important;
+  padding: 0 !important;
+  box-shadow: none !important;
+  max-height: none !important;
+  white-space: pre-wrap;       /* wrap long lines */
+  overflow-wrap: anywhere;     /* prevent overflow */
+  line-height: 1.35;
+}
+
+/* Inline code (optional: ChatGPT-ish pill) */
+.reveal :not(pre) > code {
+  background: transport;
+  padding: 0.08em 0.3em;
+  border-radius: 6px;
+}
+
+/* ===== Code blocks: force flat gray + NO scrollbars ===== */
+
+/* Make every code wrapper transparent (so pre's gray shows) */
+.reveal div.sourceCode,
+.reveal div.sourceCode pre,
+.reveal .code-with-copy,
+.reveal .code-with-copy pre,
+.reveal .sourceCode,
+.reveal .sourceCode pre {
+  background: #f3f4f6 !important;   /* gray */
+  box-shadow: none !important;
+  border: none !important;
+}
+
+/* The visible code box */
+.reveal pre {
+  background: #f3f4f6 !important;   /* gray */
+  border: none !important;
+  box-shadow: none !important;
+  border-radius: 10px;
+  padding: 0.9em 1.0em !important;
+  margin: 0.6em 0 !important;
+  width: 100% !important;
+
+  /* kill scrollbars */
+  overflow: hidden !important;
+}
+
+/* Wrap lines so no horizontal scrollbars are needed */
+.reveal pre code {
+  background: #f3f4f6 !important;   /* light gray */
+  padding: 0 !important;
+  white-space: pre-wrap !important;
+  word-break: break-word !important;
+}
+
+/* Hide scrollbars just in case (WebKit + Firefox) */
+.reveal pre::-webkit-scrollbar,
+.reveal div.sourceCode::-webkit-scrollbar {
+  width: 0 !important;
+  height: 0 !important;
+}
+.reveal pre,
+.reveal div.sourceCode {
+  scrollbar-width: none !important;
+}

@@ -1,0 +1,806 @@
+---
+title: "GitHub Actions & Automated Checks in Mesa"
+author: "Boyu Wang"
+date: 01/11/2026
+date-format: YYYY.MM.DD
+format:
+  revealjs:
+    theme: [serif, style.scss]
+    include-in-header:
+      - banner.html
+    slide-number: true
+    center: false
+    margin: 0.0
+    transition: none
+    background-transition: none
+    hash: true
+    chalkboard: true
+    highlight-style: github
+    code-line-numbers: false
+    title-slide-attributes:
+      data-background-color: "#6ec5cb"
+    pointer:
+      key: "q"
+      color: "red"
+      pointerSize: 16
+      alwaysVisible: false
+revealjs-plugins:
+  - pointer
+editor_options: 
+  chunk_output_type: console
+---
+
+## Outline
+
+:::: {.columns}
+::: {.column width="25%"}
+:::{style="font-size:0.95em; line-height:1.35;"}
+1. CI/CD
+2. Environments
+3. Environments in Mesa
+4. GitHub Actions
+5. Mesa Workflows & Checks
+
+:::
+:::
+::: {.column width="25%"}
+:::{style="font-size:0.95em; line-height:1.35;"}
+
+6. build
+7. Release
+8. Performance benchmarks
+9. Vale Prose Linter
+10. Dependabot
+
+:::
+:::
+::: {.column width="25%"}
+:::{style="font-size:0.95em; line-height:1.35;"}
+
+11. Other Automated Checks
+12. pre-commit
+13. Codecov
+14. Read the Docs
+15. CodeRabbit
+
+:::
+:::
+::: {.column width="25%"}
+:::{style="font-size:0.95em; line-height:1.35;"}
+
+16. Debugging Workflows
+
+:::
+:::
+::::
+
+---
+
+## Continuous Integration & Continuous Delivery/Deployment
+
+:::: {.columns}
+::: {.column width="55%"}
+:::{style="font-size:0.80em; line-height:1.30;"}
+
+**Motivation:**
+
+  - Catch bugs early (before merge) and keep `main` branch releasable.
+  - Make reviews faster: checks provide a baseline for correctness and style.
+  - Standardize "works on my machine" into "works in a controlled environment".
+
+**Key terms:**
+
+  - CI (Continuous Integration): automated build + tests + lint on each PR/push.
+  - CD (Continuous Delivery/Deployment): automated packaging/release once code is approved.
+  
+:::
+:::
+
+::: {.column width="45%"}
+![](./img/what_is_ci_cd.png){style="max-height:40vh; width:auto; display:block; margin:0.4em auto;"}
+<span style="font-size:0.6em; display:block; text-align:center;">
+Source: [What is CI/CD?](https://www.redhat.com/en/topics/devops/what-is-ci-cd) *by Red Hat*
+</span>
+:::
+::::
+
+---
+
+## Environments
+
+:::: {.columns}
+::: {.column width="55%"}
+:::{style="font-size:0.77em; line-height:1.28;"}
+
+An **environment** is a deployment target with its own *config*, *dependencies*, and *data* (so you can test changes safely before they reach users).
+
+Common environment types (vendor / org names vary):
+
+  - **Local dev:** your machine; fastest feedback (debugging, quick experiments).
+  - **Test / QA:** automated + manual testing; may use synthetic / anonymized data.
+  - **SIT (System Integration Test)**: validate cross-component integration end-to-end (common in stage-gated orgs).
+  - **Staging / pre-prod:** production-like environment for release validation (config parity, performance smoke tests).
+  - **Prod:** real users + real data; highest change-control.
+
+:::
+:::
+::: {.column width="45%"}
+:::{style="font-size:0.84em; line-height:1.28;"}
+
+Two example workflows:
+
+  - **Traditional stage-gated (waterfall):** dev → QA/test → SIT → UAT → prod (clear gates, fewer releases).
+  - **Modern agile/DevOps:** dev → CI → preview/review apps → staging → prod (small PRs, frequent releases; feature flags/canary often used).
+
+:::{.callout-note style="font-size:0.84em; line-height:1.25;"}
+## Learn more:
+
+  - ISTQB: [Standard Glossary of Terms Used in Software Testing](https://api.glossary.istqb.org/storage/help/R0uz58NqLzUz48LVUuyGSF76NFj4LHQazSs0GlNS.pdf)
+  - AWS: [Continuous Integration and Continuous Delivery](https://docs.aws.amazon.com/whitepapers/latest/cicd_for_5g_networks_on_aws/cicd-on-aws.html)
+  - GitLab: [Get started with GitLab CI/CD](https://docs.gitlab.com/ci/)
+  - GitHub: [Understanding GitHub Actions](https://docs.github.com/en/actions/get-started/understand-github-actions)
+:::
+:::
+
+:::
+::::
+
+---
+
+## Environments in Mesa
+
+:::: {.columns}
+::: {.column width="55%"}
+:::{style="font-size:0.84em; line-height:1.28;"}
+
+1. **dev** (local): an isolated Python env (venv/conda/uv/...)
+2. **ci** (GitHub Actions): clean machines ("runners") execute reproducible workflows triggered by PRs/pushes
+3. **staging**-ish (optional): docs preview for PRs, release candidates (rc) or pre-releases, TestPyPI
+4. **prod**: versioned release/tag, publish package artifacts (PyPI), publish docs (stable site)
+:::
+:::
+
+::: {.column width="45%"}
+```{=html}
+<svg viewBox="0 0 520 400" style="max-height:38vh; width:auto; display:block; margin:0.2em auto;">
+  <defs>
+    <marker id="arrowV" markerWidth="10" markerHeight="10" refX="8" refY="5" orient="auto" markerUnits="strokeWidth">
+      <path d="M0,0 L10,5 L0,10 Z" fill="#6ec5cb"></path>
+    </marker>
+    <style>
+      .box{fill:rgba(110,197,203,0.14);stroke:#6ec5cb;stroke-width:2}
+      .box2{fill:rgba(110,197,203,0.10);stroke:#6ec5cb;stroke-width:2}
+      .box3{fill:rgba(110,197,203,0.18);stroke:#6ec5cb;stroke-width:2.5}
+      .label{font-size:12px;fill:#0b7b83;font-weight:600;text-anchor:middle}
+      .sub{font-size:10px;fill:#555;text-anchor:middle}
+      .arrow{stroke:#6ec5cb;stroke-width:3;fill:none}
+      .title{font-size:14px;fill:#0b7b83;font-weight:600;text-anchor:middle}
+    </style>
+  </defs>
+
+  <text x="260" y="26" class="title">Example Mesa workflow</text>
+
+  <!-- All boxes: height = 52 -->
+  <rect class="box"  x="120" y="55"  width="280" height="52" rx="14"/>
+  <text class="label" x="260" y="83">dev (local)</text>
+  <text class="sub"   x="260" y="101">branch + quick checks</text>
+
+  <rect class="box"  x="120" y="130" width="280" height="52" rx="14"/>
+  <text class="label" x="260" y="158">ci (Actions)</text>
+  <text class="sub"   x="260" y="176">lint + tests + build</text>
+
+  <rect class="box2" x="160" y="205" width="200" height="52" rx="14"/>
+  <text class="label" x="260" y="233">merge</text>
+  <text class="sub"   x="260" y="251">main</text>
+
+  <rect class="box3" x="95"  y="280" width="330" height="52" rx="14"/>
+  <text class="label" x="260" y="308">prod (release)</text>
+  <text class="sub"   x="260" y="326">tag → publish artifacts (PyPI)</text>
+
+  <!-- arrows -->
+  <path class="arrow" d="M260,107 L260,128"/>
+  <path class="arrow" d="M260,182 L260,203"/>
+  <path class="arrow" d="M260,257 L260,278"/>
+</svg>
+```
+:::
+::::
+
+---
+
+## GitHub Actions
+
+:::: {.columns}
+::: {.column width="55%"}
+:::{style="font-size:0.75em; line-height:1.28;"}
+
+A CI/CD platform built into GitHub repositories: it runs **workflows** on GitHub-hosted or self-hosted **machines** when repository **events** happen.
+
+Core concepts:
+
+- **Workflow:** a YAML automation defined in `.github/workflows/`.
+- **Event:** what triggers a workflow run (`push`, `pull_request`, `schedule`, ...).
+- **Runner:** the machine that runs a job (GitHub-hosted or self-hosted).
+- **Job:** a set of steps executed on the same runner; jobs can run in parallel or depend on other jobs.
+- **Steps (inside a job):** each step is either a `run:` shell command or a `uses:` action.
+- **Action:** a pre-defined, reusable unit that performs common tasks inside workflows.
+
+:::
+:::
+
+::: {.column width="45%"}
+![](./img/overview-actions-simple.webp){style="max-height:40vh; width:auto; display:block; margin:0.4em auto;"}
+<span style="font-size:0.6em; display:block; text-align:center;">
+Source: GitHub Docs - [Understanding GitHub Actions](https://docs.github.com/en/actions/get-started/understand-github-actions)</span>
+:::
+::::
+
+---
+
+## Mesa Workflows & Checks
+
+:::: {.columns}
+::: {.column width="50%"}
+:::{style="font-size:0.75em; line-height:1.28;"}
+
+Mesa's main workflows (from `.github/workflows/`)
+
+- **`build_lint.yml`**: unit tests + code coverage + example runs
+- **`release.yml`**: build & publish releases
+- **`benchmarks.yml`**: performance benchmarks to detect slowdowns)
+- **`vale.yml`**: docs prose/style checks (spelling, terminology, writing rules) using Vale
+
+Each workflow file defines:
+
+- **Workflow name**
+- **Triggers**: when to run (PR / push / schedule / ...)
+- **Jobs**: logical groups of work (test, lint, docs, release, ...)
+- **Steps**: commands / actions (install deps, run pytest, upload coverage, ...)
+
+:::
+:::
+
+::: {.column width="50%"}
+:::{style="font-size:0.75em; line-height:1.28;"}
+
+"Supporting config" that *feeds into* checks (not all are Actions)
+
+These aren't workflows themselves, but they control what checks do:
+
+- `.pre-commit-config.yaml`: defines local/dev hooks; also used by **pre-commit.ci** (a 3rd-party CI service) to run the same hooks.
+- `codecov.yaml`: config for Codecov.
+- `.readthedocs.yml`: config for Read the Docs builds (docs check runs as an external service).
+- `.coderabbit.yaml`: config for CodeRabbit automated review.
+
+:::
+:::
+::::
+
+---
+
+## build: `build_lint.yml`
+
+:::: {.columns}
+::: {.column width="50%"}
+
+```yaml
+# simplified shape (not exact)
+on: [pull_request, push, schedule]
+jobs:
+  build:      # matrix (os × python)
+  coverage:   # coverage report → Codecov
+  examples:   # run example models/tests
+```
+
+:::
+
+::: {.column width="50%"}
+:::{style="font-size:0.84em; line-height:1.28;"}
+- **Purpose:** baseline PR gate - Mesa must install and tests must pass on common platforms.
+- **Matrix:** runs across multiple OS + Python versions to catch platform/version issues.
+- **Triggers:** pull requests, pushes to key branches (e.g., main / release*), and a weekly schedule.
+- **Steps:**
+  * build (install .[dev] + pytest)
+  * coverage (pytest + coverage → Codecov)
+  * examples (run example models).
+:::
+:::
+::::
+
+---
+
+## Release: `release.yml`
+
+:::: {.columns}
+::: {.column width="50%"}
+
+```yaml
+# simplified shape (not exact)
+on: [push(tags), push(branches), pull_request, schedule]
+# allows gh to authenticate and publish with PyPI
+permissions: { id-token: write }
+jobs:
+  release:  # build dist + publish to PyPI (tag pushes only)
+```
+
+:::
+
+::: {.column width="50%"}
+:::{style="font-size:0.84em; line-height:1.28;"}
+- **Purpose:** build Mesa distributions and **publish to PyPI** for tagged releases.
+- **Triggers:** PR/push/schedule exist for visibility, but *publishing* only happens on **push + tag**.
+- **Security:** uses OIDC (`id-token: write`) so PyPI publish can avoid long-lived API tokens.
+- **Steps:** checkout → setup Python → install `hatch` → `hatch build`.
+- **Artifacts:** on official repo + tag, uploads `dist/` as a GitHub Actions artifact ("package").
+- **Publish**: runs `pypa/gh-action-pypi-publish` only when `startsWith(ref, refs/tags)`.
+:::
+:::
+::::
+
+---
+
+## Performance benchmarks: `benchmarks.yml`
+
+:::: {.columns}
+::: {.column width="50%"}
+```yaml
+# simplified shape (not exact)
+on:
+  pull_request_target:   # opened / ready_for_review / labeled
+permissions:
+  issues: write
+  pull-requests: write
+jobs:
+  run-benchmarks:        # compare main vs PR + comment
+```
+:::
+
+::: {.column width="50%"}
+:::{style="font-size:0.84em; line-height:1.28;"}
+- **Purpose:** run performance benchmarks and report a **main vs PR** comparison directly in the PR.
+- **Trigger:** runs when PR is opened / marked `ready_for_review`, or when `trigger-benchmarks` label is added
+- **Steps:** benchmark Mesa main → upload baseline timings results → checkout PR branch → benchmark again → compare → comment results.
+- **Output:** posts a PR comment via `actions/github-script` (requires the workflow's write permissions).
+:::
+:::
+::::
+
+---
+
+## Vale Prose Linter: `vale.yml`
+
+:::: {.columns}
+::: {.column width="50%"}
+```yaml
+# simplified shape (not exact)
+on:
+  pull_request:   # docs/text files only
+  push:           # main, docs/text files only
+concurrency:      # cancel older runs on same ref
+jobs:
+  vale:           # run Vale prose linter
+```
+
+:::{.callout-note style="font-size:0.84em; line-height:1.25;"}
+
+## What is Vale?
+
+**Vale** is an open-source *prose linter* that enforces writing rules via config + rule sets ("styles").
+
+- You can enable existing style packs (e.g., "Google", "Microsoft") or write your own project rules.
+- Rules can check spelling, vocabulary, casing, headings, punctuation, and many other patterns in *documentation* and *text files*.
+
+Learn more: [Vale documentation](https://vale.sh/docs)
+:::
+:::
+
+::: {.column width="50%"}
+:::{style="font-size:0.84em; line-height:1.28;"}
+- **Purpose:** run **Vale** (prose/style linter) on documentation and text files to catch wording/style issues early.
+- **Path-filtered trigger:** only runs when docs-related files change (`.md`, `.rst`, `.txt`, `docs/**`, `.vale.ini`, style rules).
+- **Concurrency:** for the same PR/branch, new runs cancel in-progress older runs (keeps CI noise down).
+- **Implementation:** checks out the repo, then runs `errata-ai/vale-action` with `files: all` and `--minAlertLevel=warning`.
+- **Non-blocking by default:** `fail_on_error`: false means it's typically an advisory check (useful feedback without hard-failing PRs).
+:::
+:::
+::::
+
+---
+
+## Dependabot: `.github/dependabot.yml`
+
+:::: {.columns}
+::: {.column width="50%"}
+```yaml
+version: 2
+updates:
+  # Maintain dependencies for GitHub Actions
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      # Check for updates to GitHub Actions every week
+      interval: "weekly"
+```
+
+:::{.callout-note style="font-size:0.84em; line-height:1.25;"}
+## Learn more
+- GitHub Docs: [Keeping your actions up to date with Dependabot](https://docs.github.com/en/code-security/dependabot/working-with-dependabot/keeping-your-actions-up-to-date-with-dependabot)
+:::
+:::
+
+::: {.column width="50%"}
+:::{style="font-size:0.84em; line-height:1.28;"}
+- **Dependabot** is not a GitHub Actions workflow. It's a separate GitHub feature that **opens automated PRs** to update dependencies.
+- Once Dependabot opens a PR, your GitHub Actions workflows run on that PR (tests, lint, docs, etc.) like any other PR.
+- **Steps:** Dependabot PR → CI passes → reviewer merges → dependency updates.
+:::
+:::
+::::
+
+---
+
+## Other Automated Checks
+
+:::: {.columns}
+::: {.column width="60%"}
+:::{style="font-size:0.84em; line-height:1.28;"}
+
+These are **automations around PRs** that complement the GitHub Actions workflows, and some run locally too:
+
+- **pre-commit** hooks & **pre-commit.ci**: hooks to enforce formatting/linting
+  - **ruff**: fast lint + formatter
+  - **pyupgrade**: auto-modernize Python syntax 
+  - **codespell:** catch common typos in code + docs
+  - **Vale**: *prose linter* for docs (spelling, style, terminology consistency)
+- **Codecov**: coverage reporting + PR status checks / diffs
+- **Read the Docs**: docs builds + hosted docs, often with PR previews
+- **CodeRabbit**: automated PR review comments (code reading + suggestions)
+
+:::
+:::
+
+::: {.column width="40%"}
+```{=html}
+<style>
+  /* simple "brand icon” tint to match the deck theme */
+  .svc-grid{display:grid; grid-template-columns:1fr 1fr; gap:14px; align-items:center; justify-items:start; margin-top:0.2em;}
+  .svc{display:flex; align-items:center; gap:10px;}
+  .svc .logo{height:34px; width:34px; filter: invert(28%) sepia(24%) saturate(1530%) hue-rotate(142deg) brightness(92%) contrast(92%);}
+  .svc .txt{font-size:0.78em; line-height:1.15;}
+  .svc .name{font-weight:600; color:#0b7b83;}
+  .svc .sub{color:#555;}
+  .badge{height:34px; width:34px; border-radius:10px; display:flex; align-items:center; justify-content:center;
+         background:rgba(110,197,203,0.14); border:1.5px solid #6ec5cb; color:#0b7b83; font-weight:700; font-size:14px;}
+</style>
+
+<div class="svc-grid">
+  <!-- pre-commit -->
+  <div class="svc">
+    <img class="logo" src="https://unpkg.com/simple-icons@v6/icons/precommit.svg" alt="pre-commit"/>
+    <div class="txt">
+      <div class="name">pre-commit</div>
+      <div class="sub">local + pre-commit.ci</div>
+    </div>
+  </div>
+
+  <!-- ruff -->
+  <div class="svc">
+    <img class="logo" src="https://docs.astral.sh/ruff/assets/bolt.svg" alt="ruff"/>
+    <div class="txt">
+      <div class="name">ruff</div>
+      <div class="sub">lint + format</div>
+    </div>
+  </div>
+
+  <!-- Vale -->
+  <div class="svc" style="display:flex; align-items:center; gap:10px;">
+    <div class="icon" style="display:flex; align-items:center; justify-content:center;">
+      <svg
+        viewBox="0 0 417.000000 387.000000"
+        preserveAspectRatio="xMidYMid meet"
+        xmlns="http://www.w3.org/2000/svg"
+        style="height:34px; width:34px; display:block;"
+      >
+        <g transform="translate(0.000000,387.000000) scale(0.100000,-0.100000)" fill="#82CB15" stroke="none">
+          <path d="M2761 3207 c-30 -61 -162 -329 -293 -593 -131 -265 -238 -488 -238 -495 0 -8 75 -165 166 -349 92 -184 170 -346 175 -359 8 -19 12 -21 24 -11 8 7 15 16 15 20 0 5 132 275 293 602 162 326 370 748 464 938 94 190 169 348 166 353 -2 4 -165 7 -361 7 l-357 0 -54 -113z"></path>
+          <path d="M560 2467 c0 -2 20 -39 45 -83 25 -43 45 -82 45 -86 0 -4 134 -279 299 -610 452 -914 541 -1095 541 -1107 0 -7 12 -16 26 -21 33 -13 684 -13 704 0 12 8 13 13 3 27 -7 10 -30 54 -52 98 -41 84 -332 674 -673 1365 -110 223 -205 408 -212 412 -10 7 -726 12 -726 5z"></path>
+        </g>
+      </svg>
+    </div>
+  
+    <div class="txt" style="font-size:0.78em; line-height:1.1;">
+      <div class="name" style="font-weight:600; color:#0b7b83;">Vale</div>
+      <div class="sub" style="color:#555;">prose lint</div>
+    </div>
+  </div>
+
+  <!-- Codecov -->
+  <div class="svc">
+    <img class="logo" src="https://unpkg.com/simple-icons@v6/icons/codecov.svg" alt="Codecov"/>
+    <div class="txt">
+      <div class="name">Codecov</div>
+      <div class="sub">coverage</div>
+    </div>
+  </div>
+
+  <!-- Read the Docs -->
+  <div class="svc">
+    <img class="logo" src="https://unpkg.com/simple-icons@v6/icons/readthedocs.svg" alt="Read the Docs"/>
+    <div class="txt">
+      <div class="name">Read the Docs</div>
+      <div class="sub">docs build/preview</div>
+    </div>
+  </div>
+
+  <!-- CodeRabbit (inline SVG so it always renders offline) -->
+  <div class="svc">
+    <svg class="logo" viewBox="0 0 1201 1201" xmlns="http://www.w3.org/2000/svg" aria-label="CodeRabbit">
+      <path d="M1008.3 501.114C1008.3 501.114 924.706 394.25 819.62 388.138C751.807 384.136 735.379 393.196 732.434 399.943C728.226 364.955 698.322 202.86 491.729 168.508C518.102 358.089 627.02 308.691 691.161 439.36C691.161 439.36 582.921 292.234 404.969 346.403C404.969 346.403 469.83 482.569 661.676 510.391C661.676 510.391 677.05 563.086 681.684 572.362C681.684 572.362 386.224 418.279 296.512 714.004C229.747 698.882 207.352 771.359 284.09 820.869C284.09 820.869 297.147 769.019 328.943 753.63C328.943 753.63 260.711 829.726 340.946 920.859H628.925C635.883 909.334 666.68 848.69 590.514 802.784C644.278 802.016 688.042 903.432 735.128 921.558H803.61C805.927 915.928 810.771 899.066 799.395 883.895C781.857 863.778 743.46 866.502 743.802 829.299C757.062 656.245 1016.55 709.387 1008.3 501.114Z" fill="#171717"/>
+    </svg>
+    <div class="txt">
+      <div class="name">CodeRabbit</div>
+      <div class="sub">PR review bot</div>
+    </div>
+  </div>
+</div>
+```
+:::
+::::
+
+---
+
+## pre-commit: local hooks & pre-commit.ci
+
+:::: {.columns}
+::: {.column width="60%"}
+:::{style="font-size:0.84em; line-height:1.28;"}
+
+Same formatting/lint results locally and in PR checks:
+
+- **pre-commit**: a framework to run checks **locally** before commits (see [pre-commit.com](https://pre-commit.com/))
+- **pre-commit.ci**: a CI service that runs the **same config** on PRs  (see [pre-commit.ci](https://pre-commit.ci/))
+
+**Steps**
+
+- **ruff**: lint + auto-fix; **ruff-format**: formatter.  ([Ruff Docs](https://docs.astral.sh/ruff/integrations/#pre-commit))
+- **pyupgrade**: modernize syntax (Mesa config targets `--py312-plus`).  ([pyupgrade](https://github.com/asottile/pyupgrade))
+- **codespell**: catch common typos in code + docs.  ([codespell](https://github.com/codespell-project/codespell))
+- **Vale**: run locally, skipped in ci (handled in a workflow `vale.yml`)
+
+:::
+:::
+
+::: {.column width="40%"}
+:::{style="font-size:0.78em; line-height:1.20;"}
+
+`.pre-commit-config.yaml` (simplified shape):
+
+```yaml
+ci:
+  autoupdate_schedule: monthly
+  skip: [vale]   # Vale runs via vale.yml workflow instead
+
+repos:
+  - ruff:         lint (--fix)
+  - ruff-format:  formatter
+  - pyupgrade:    --py312-plus
+  - pre-commit-hooks:
+      trailing-whitespace
+      check-toml
+      check-yaml
+  - codespell:    typos
+  - vale:         prose lint (md/rst/txt)
+```
+:::
+```{=html}
+<svg viewBox="0 0 520 150" style="max-height:22vh; width:auto; display:block; margin:0.2em auto;">
+  <defs>
+    <marker id="arrpc" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto" markerUnits="strokeWidth">
+      <path d="M0,0 L8,4 L0,8 Z" fill="#6ec5cb"></path>
+    </marker>
+    <style>
+      .box{fill:rgba(110,197,203,0.14);stroke:#6ec5cb;stroke-width:2}
+      .label{font-size:12px;fill:#0b7b83;font-weight:600;text-anchor:middle}
+      .sub{font-size:10px;fill:#555;text-anchor:middle}
+      .arrow{stroke:#6ec5cb;stroke-width:3;fill:none;marker-end:url(#arrpc)}
+    </style>
+  </defs>
+
+  <rect class="box" x="25"  y="35" width="140" height="56" rx="14"/>
+  <text class="label" x="95" y="60">local</text>
+  <text class="sub"   x="95" y="78">pre-commit hooks</text>
+
+  <rect class="box" x="190" y="35" width="140" height="56" rx="14"/>
+  <text class="label" x="260" y="60">PR</text>
+
+  <rect class="box" x="355" y="35" width="140" height="56" rx="14"/>
+  <text class="label" x="425" y="60">pre-commit.ci</text>
+  <text class="sub"   x="425" y="78">same config</text>
+
+  <path class="arrow" d="M165,63 L190,63"/>
+  <path class="arrow" d="M330,63 L355,63"/>
+</svg>
+```
+:::
+::::
+
+---
+
+## Codecov
+
+:::: {.columns}
+::: {.column width="60%"}
+:::{style="font-size:0.84em; line-height:1.28;"}
+- Codecov is a **3rd-party coverage service**, but it plugs into GitHub Actions: Action runs tests & uploads coverage.
+- Turns binary whether "tests passed" into coverage signals: project/patch coverage, diffs/annotations.
+- The `coverage` job uploads via `codecov/codecov-action` and fails the workflow if upload breaks (`fail_ci_if_error: true`).
+- Config: target 80% project coverage, small threshold window of 1%.
+:::
+:::
+
+::: {.column width="40%"}
+:::{style="font-size:0.70em; line-height:1.28;"}
+:::{style="font-size:0.70em; line-height:1.28;"}
+part of the `build_lint.yml` workflow:
+:::
+```yaml
+# simplified shape (not exact)
+jobs:
+  coverage:
+    steps:
+      # generate coverage report
+      - run: pytest --cov
+      # upload to codecov
+      - uses: codecov/codecov-action@v5
+        with:
+          fail_ci_if_error: true
+          token: ${{ secrets.CODECOV_TOKEN }}
+```
+:::{style="font-size:0.70em; line-height:1.28;"}
+`codecov.yaml` config:
+:::
+```yaml
+coverage:
+  status:
+    project:
+      default:
+        target: 80%
+        threshold: 1%
+
+ignore:
+  - "benchmarks/**"
+  - "mesa/visualization/**"
+
+comment: off
+```
+:::
+:::
+::::
+
+---
+
+## Read the Docs
+
+:::: {.columns}
+::: {.column width="60%"}
+:::{style="font-size:0.84em; line-height:1.28;"}
+
+- Read the Docs (RTD) is a **3rd-party docs hosting/build service**, but it integrates with GitHub PRs.
+- On PRs, RTD can build the docs and provide a **preview link** (a "review app" for documentation).
+- The build is driven by repo config (`.readthedocs.yml`) plus docs toolchain (Sphinx/MkDocs).
+- **Steps:** PR opened → RTD builds → preview available → merge → default branch rebuild → stable docs updated.
+
+:::
+:::
+
+::: {.column width="40%"}
+:::{style="font-size:0.78em; line-height:1.20;"}
+
+`.readthedocs.yml` config:
+
+```yaml
+version: 2
+
+# Build documentation in the docs/ directory with Sphinx
+sphinx:
+  configuration: docs/conf.py
+
+# Optionally build your docs in additional formats such as PDF
+formats:
+  - pdf
+
+build:
+  os: ubuntu-lts-latest
+  tools:
+    python: latest
+
+# Optionally set the version of Python and requirements required to build your docs
+python:
+  install:
+    - method: pip
+      path: .
+      extra_requirements:
+        - docs
+```
+
+:::
+:::
+::::
+
+---
+
+## CodeRabbit
+
+:::: {.columns}
+::: {.column width="60%"}
+:::{style="font-size:0.84em; line-height:1.28;"}
+
+- **CodeRabbit** is an automated PR review bot: posts high-level summaries, file-by-file walkthroughs, and code suggestions directly on the PR. ([coderabbit.ai](https://www.coderabbit.ai/))
+- Repo config aims for "lightweight but helpful": `profile: chill`, summary + changed-file summary + optional sequence diagrams, plus suggested reviewers/labels.
+- Auto-review is disabled (no unsolicited full reviews on every PR by default).
+- It can run a toolbox of linters/checkers (e.g., ruff, shellcheck, markdownlint, GitHub checks) and provide results in review feedback.
+- Optional "chat" features are enabled (auto-reply, can create issues), and it may use web search in its knowledge base.
+
+:::
+:::
+
+::: {.column width="40%"}
+:::{style="font-size:0.78em; line-height:1.20;"}
+
+`.coderabbit.yaml` (selected settings):
+
+```yaml
+reviews:
+  profile: chill
+  high_level_summary: true
+  commit_status: true
+  fail_commit_status: false
+
+  auto_review:
+    enabled: false
+
+  tools:
+    ruff:
+      enabled: true
+    shellcheck:
+      enabled: true
+    markdownlint:
+      enabled: true
+    github-checks:
+      enabled: true
+      timeout_ms: 180000
+
+chat:
+  auto_reply: true
+  create_issues: true
+
+knowledge_base:
+  web_search:
+    enabled: true
+```
+:::
+:::
+::::
+
+---
+
+## Debugging Workflows
+
+:::{style="font-size:0.84em; line-height:1.28;"}
+
+Start from the workflow run page:
+
+- Read logs, expand failed steps, download logs if needed: [Using workflow run logs](https://docs.github.com/en/actions/how-tos/monitor-workflows/use-workflow-run-logs)
+- Re-run a failed job/workflow after fixes: [Re-running workflows and jobs](https://docs.github.com/en/actions/how-tos/manage-workflow-runs/re-run-workflows-and-jobs)
+
+Get more debug information:
+
+- Enable step + runner debug logs (`ACTIONS_STEP_DEBUG`, `ACTIONS_RUNNER_DEBUG`): [Enable debug logging](https://docs.github.com/en/actions/how-tos/monitor-workflows/enable-debug-logging)
+
+References:
+
+- GitHub Docs: [Troubleshooting workflows](https://docs.github.com/en/actions/how-tos/troubleshoot-workflows)
+- Lost Pixel: [How to debug GitHub Actions](https://www.lost-pixel.com/blog/how-to-debug-github-actions-guide)
+- GitHub Community discussion: [Actions debugging thread](https://github.com/orgs/community/discussions/137799)
+
+:::
