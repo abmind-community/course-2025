@@ -90,8 +90,8 @@ editor_options:
 
 **Key terms:**
 
-  - CI (Continuous Integration): automated build + tests + lint on each PR/push.
-  - CD (Continuous Delivery/Deployment): automated packaging/release once code is approved.
+  - **CI (Continuous Integration):** automated build + tests + lint on each PR/push.
+  - **CD (Continuous Delivery/Deployment):** automated packaging/release once code is approved.
   
 :::
 :::
